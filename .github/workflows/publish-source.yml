@@ -1,0 +1,43 @@
+name: Publish source from release archive
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/publish-source.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Extract v1.12.3 source package
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .publish_tmp
+          mkdir .publish_tmp
+          unzip -q -o codex-surface-theme-1.12.3.zip -d .publish_tmp
+          cp -a .publish_tmp/. .
+          rm -rf .publish_tmp
+
+      - name: Commit extracted source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No source changes to commit."
+            exit 0
+          fi
+          git commit -m "Publish v1.12.3 source files"
+          git push

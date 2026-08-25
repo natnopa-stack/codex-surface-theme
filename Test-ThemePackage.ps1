@@ -157,11 +157,10 @@ $launchScript = if (Test-Path -LiteralPath $launchScriptPath) { Get-Content -Raw
 $launchCmd = if (Test-Path -LiteralPath $launchCmdPath) { Get-Content -Raw -LiteralPath $launchCmdPath } else { "" }
 $applyCmd = if (Test-Path -LiteralPath $applyCmdPath) { Get-Content -Raw -LiteralPath $applyCmdPath } else { "" }
 $themeCss = $css + "`n" + $tuningCss
-Add-Check ($launchScript.Contains('THEME_RECOVERY_REQUIRED=1') -and $launchScript.Contains('CloseMainWindow()') -and $launchScript.Contains('Force-close Codex and continue?')) "update-aware safe recovery launcher"
-Add-Check ($launchScript.Contains('[switch]$NonInteractive')) "recovery launcher non-interactive guard"
-Add-Check ($launchScript.Contains('[switch]$AutoRecover') -and $launchScript.Contains('Start-Sleep -Seconds 3')) "automatic recovery countdown"
-Add-Check ($launchCmd.Contains('Launch-Codex-Themed.ps1" -AutoRecover') -and $applyCmd.Contains('Launch-Codex-Themed.ps1" -AutoRecover')) "CMD entries enable automatic recovery"
-Add-Check ($applyCmd.Contains('if not "%exit_code%"=="2" goto done') -and $applyCmd.Contains('Launch-Codex-Themed.ps1')) "Apply entry falls back to recovery launcher"
+Add-Check ($launchScript.Contains('THEME_RECOVERY_REQUIRED=1') -and $launchScript.Contains('active tasks remain untouched') -and $launchScript.Contains('exit 2')) "launcher fails closed for running Codex without endpoint"
+Add-Check ((-not $launchScript.Contains('CloseMainWindow()')) -and (-not $launchScript.Contains('Stop-Process')) -and (-not $launchScript.Contains('[switch]$AutoRecover'))) "launcher never closes or restarts Codex"
+Add-Check ($launchCmd.Contains('Launch-Codex-Themed.ps1"') -and (-not $launchCmd.Contains('-AutoRecover'))) "launcher CMD keeps recovery manual"
+Add-Check ($applyCmd.Contains('if not "%exit_code%"=="2" goto pause_now') -and $applyCmd.Contains('No Codex process was closed or restarted') -and (-not $applyCmd.Contains('Launch-Codex-Themed.ps1'))) "Apply entry preserves running Codex"
 $markers = [ordered]@{
     "Surface layout" = 'data-codex-surface-layout="surface"'
     "Composer runner" = "surface-composer-ring-flow"

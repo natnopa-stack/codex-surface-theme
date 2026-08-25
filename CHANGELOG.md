@@ -13,6 +13,8 @@
 
 ### Fixed
 
+- Fixed the launcher so an already-running Codex session without a local theme endpoint is never closed, force-terminated, or restarted automatically.
+- `LAUNCH-CODEX-THEMED.cmd` and `APPLY-THEME.cmd` now fail closed with exit code 2 and ask the user to finish active work and quit Codex manually.
 - Removed theme-side observer feedback loops and redundant DOM writes.
 - Deduplicated dynamic refresh work during high-frequency streaming updates.
 - Limited full status refreshes while keeping lightweight activity-state updates responsive.

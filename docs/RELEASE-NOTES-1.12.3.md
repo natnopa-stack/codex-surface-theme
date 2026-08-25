@@ -2,6 +2,12 @@
 
 状态：正式版。面向 Windows Codex 桌面版，Surface 视觉层以**暗色模式**为唯一正式适配基线。
 
+## 安全热修复
+
+- 修复 Launcher 在检测到“Codex 已运行但没有本地主题端点”时，可能自动关闭或强制结束 Codex 进程的问题。
+- 现在 Launcher 只返回退出码 `2` 并提示手动退出，不会自动关闭、强制结束或重启 Codex，避免打断正在执行的任务。
+- `APPLY-THEME.cmd` 也不再自动进入恢复启动流程；请完成当前任务、从托盘完全退出 Codex，再运行 `LAUNCH-CODEX-THEMED.cmd`。
+
 ## 本版重点
 
 - 暗色 Surface 层级：中性 Canvas、独立面板、小圆角、细边框与克制辉光。

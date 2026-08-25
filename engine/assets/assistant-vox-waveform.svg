@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 24" preserveAspectRatio="none">
+  <path
+    d="M 0,12 L 80,12 Q 100,12 110,6 T 125,18 T 140,2 T 155,22 T 170,4 T 185,19 T 200,8 T 220,12 L 500,12"
+    fill="none"
+    stroke="#00f0ff"
+    stroke-width="2.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.75"
+  />
+  <path
+    d="M 0,12 L 80,12 Q 100,12 110,6 T 125,18 T 140,2 T 155,22 T 170,4 T 185,19 T 200,8 T 220,12 L 500,12"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="1.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

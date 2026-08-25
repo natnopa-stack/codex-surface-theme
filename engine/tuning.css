@@ -1,0 +1,1700 @@
+/*
+ * Codex Surface Theme - user tuning layer
+ *
+ * This file is appended after the frozen skin.css baseline. Keep routine
+ * visual adjustments here, then run APPLY-THEME.cmd again.
+ */
+
+/* --------------------------------------------------------------------------
+ * Surface geometry and neutral light palette
+ * ----------------------------------------------------------------------- */
+:root[data-codex-surface-layout="surface"] {
+  --surface-gap: 8px;
+  --surface-radius: 12px;
+  --surface-response-radius: 10px;
+  --surface-user-bubble-radius: 12px;
+  --surface-composer-radius: 15px;
+
+  /* Equal RGB channels: no yellow, green, or warm cast. */
+  --app-canvas: #ffffff;
+  --sidebar-surface: #f3f3f3;
+  --main-surface: #ffffff;
+  --secondary-surface: #f7f7f7;
+  --assistant-surface: #f6f6f6;
+  --composer-surface: #ffffff;
+  --neutral-border: rgb(0 0 0 / 6.5%);
+  --neutral-shadow: rgb(0 0 0 / 7%);
+
+  /* Composer runner. */
+  --surface-composer-ring-opacity: 0.96;
+  --surface-composer-ring-duration: 4s;
+  --surface-composer-ring-mask-mid: 0.45;
+  --surface-composer-ring-mask-bottom: 0.04;
+  --surface-composer-ring-track: rgb(0 0 0 / 9%);
+  --surface-composer-ring-cyan: rgb(0 205 232);
+  --surface-composer-ring-magenta: rgb(218 0 236);
+
+}
+
+/* Preserve the accepted brighter runner in official/custom dark themes. */
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark) {
+  --surface-composer-ring-opacity: 1;
+  --surface-composer-ring-mask-mid: 0.5;
+  --surface-composer-ring-mask-bottom: 0.06;
+  --surface-composer-ring-track: rgb(255 255 255 / 12%);
+  --surface-composer-ring-cyan: rgb(0 229 255);
+  --surface-composer-ring-magenta: rgb(240 0 255);
+}
+
+/* Codex 26.803+ mounts the Add Context menu above the Composer inside the
+ * ring host. The frozen baseline clipped that host to shape the 1px runner,
+ * which also clipped the entire native menu after the app update. The masked
+ * runner already owns its radius, so the host can safely expose popovers. */
+:root[data-codex-surface-layout="surface"]
+  :has(> [data-composer-surface-variant]) {
+  overflow: visible !important;
+}
+
+/* Codex 26.803 renders its native source-directory chooser over the xterm
+ * rows. Keep that native control and its shortcuts intact, but give it an
+ * opaque terminal-colored surface and park it at the upper-right so startup
+ * banners remain readable instead of showing through the chooser text. */
+:root[data-codex-surface-layout="surface"]
+  [id^="terminal-panel-"]
+  :has(> [role="group"] button[aria-current="location"]) {
+  margin-inline-start: auto;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [id^="terminal-panel-"]
+  [role="group"]:has(button[aria-current="location"]) {
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--color-token-border-default, rgb(255 255 255 / 10%));
+  border-radius: 6px;
+  background: var(--color-token-main-surface-primary, #191919);
+  box-shadow: none;
+}
+
+/* Keep the frozen baseline's compact geometry on narrow windows. */
+@media (max-width: 720px) {
+  :root[data-codex-surface-layout="surface"] {
+    --surface-gap: 6px;
+    --surface-radius: 10px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Assistant indicators
+ * ----------------------------------------------------------------------- */
+
+/* Violet-white plasma is intentionally not presented as literal current. The
+ * complete rail stays weakly conductive and breathes in place; the smooth
+ * filament never scans, jumps, or changes into a zigzag trace. */
+@keyframes surface-assistant-plasma-rail-breathe {
+  0%, 100% {
+    opacity: 0.52;
+    filter: brightness(0.9) saturate(0.94);
+  }
+
+  46% {
+    opacity: 0.9;
+    filter: brightness(1.12) saturate(1.04);
+  }
+
+  72% {
+    opacity: 0.68;
+    filter: brightness(0.98) saturate(0.98);
+  }
+}
+
+@keyframes surface-assistant-plasma-filament-breathe {
+  0%, 100% {
+    inset-inline-start: 50%;
+    --surface-assistant-current-envelope: 0.62;
+    transform: translateX(-50%);
+  }
+
+  46% {
+    inset-inline-start: 50%;
+    --surface-assistant-current-envelope: 1;
+    transform: translateX(-50%);
+  }
+
+  72% {
+    inset-inline-start: 50%;
+    --surface-assistant-current-envelope: 0.78;
+    transform: translateX(-50%);
+  }
+}
+
+/* Rider: a broad red reflection replaces the isolated pure-white center dot. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"] {
+  --surface-assistant-thinking-rail-height: 3px;
+  --surface-assistant-thinking-line:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(166 18 28 / 8%) 8%,
+      rgb(190 20 30 / 22%) 20%,
+      rgb(210 24 34 / 52%) 34%,
+      #dc2633 43%,
+      #ee4d55 46%,
+      #f97977 48% 52%,
+      #ee4d55 54%,
+      #dc2633 57%,
+      rgb(210 24 34 / 52%) 66%,
+      rgb(190 20 30 / 22%) 80%,
+      rgb(166 18 28 / 8%) 92%,
+      transparent 100%
+    ),
+    linear-gradient(rgb(176 20 30 / 14%), rgb(176 20 30 / 14%));
+  --surface-assistant-thinking-shadow:
+    0 0 2px rgb(136 10 20 / 34%),
+    0 0 5px rgb(208 22 32 / 18%);
+  --surface-assistant-thinking-animation:
+    surface-assistant-rider-sweep 2.8s ease-in-out infinite;
+}
+
+/* Plasma breathe: a low-energy full rail plus one smooth, stationary filament.
+ * Both layers fade inside the prose boundaries and breathe together. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="current"] {
+  --surface-assistant-thinking-rail-height: 2px;
+  --surface-assistant-thinking-rail-mask:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(0 0 0 / 22%) 4%,
+      #000 10%,
+      #000 90%,
+      rgb(0 0 0 / 22%) 96%,
+      transparent 100%
+    );
+  --surface-assistant-thinking-line:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(88 28 135 / 5%) 5%,
+      rgb(109 40 217 / 14%) 14%,
+      rgb(124 58 237 / 22%) 30%,
+      rgb(124 58 237 / 30%) 50%,
+      rgb(124 58 237 / 22%) 70%,
+      rgb(109 40 217 / 14%) 86%,
+      rgb(88 28 135 / 5%) 95%,
+      transparent 100%
+    ),
+    linear-gradient(rgb(109 40 217 / 7%), rgb(109 40 217 / 7%));
+  --surface-assistant-plasma-filament:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(88 28 135 / 8%) 6%,
+      rgb(109 40 217 / 34%) 18%,
+      rgb(124 58 237 / 64%) 34%,
+      rgb(192 132 252 / 86%) 44%,
+      rgb(245 239 255 / 94%) 48%,
+      rgb(255 255 255 / 96%) 50%,
+      rgb(245 239 255 / 94%) 52%,
+      rgb(192 132 252 / 86%) 56%,
+      rgb(124 58 237 / 64%) 66%,
+      rgb(109 40 217 / 34%) 82%,
+      rgb(88 28 135 / 8%) 94%,
+      transparent 100%
+    );
+  --surface-assistant-thinking-position: center, center;
+  --surface-assistant-thinking-size: 100% 100%, 100% 100%;
+  --surface-assistant-thinking-shadow:
+    0 0 0.5px rgb(88 28 135 / 20%),
+    0 0 1.25px rgb(109 40 217 / 8%);
+  --surface-assistant-thinking-animation:
+    surface-assistant-plasma-rail-breathe 3.2s ease-in-out infinite;
+  --surface-assistant-thinking-beat-animation:
+    surface-assistant-plasma-filament-breathe 3.2s ease-in-out infinite;
+  --surface-assistant-thinking-beat-paint:
+    var(--surface-assistant-plasma-filament);
+  --surface-assistant-thinking-beat-mask:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(0 0 0 / 18%) 4%,
+      #000 10%,
+      #000 90%,
+      rgb(0 0 0 / 18%) 96%,
+      transparent 100%
+    );
+  --surface-assistant-thinking-beat-position: center;
+  --surface-assistant-thinking-beat-size: 100% 1px;
+  --surface-assistant-thinking-beat-filter:
+    drop-shadow(0 0 0.3px rgb(245 239 255 / 72%))
+    drop-shadow(0 0 1px rgb(109 40 217 / 16%));
+  --surface-assistant-thinking-beat-width: calc(100% - 24px);
+  --surface-assistant-thinking-beat-height: 14px;
+}
+
+/* VOX Canvas preview. The legacy SVG remains in the package as a rollback
+ * asset, but the live signal is drawn by one DPR-aware requestAnimationFrame
+ * loop shared by the Online Core and the active Assistant response. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="vox"] {
+  --surface-assistant-thinking-rail-height: 1px;
+  --surface-assistant-thinking-line: none;
+  --surface-assistant-thinking-shadow: none;
+  --surface-assistant-thinking-animation: none;
+  --surface-assistant-thinking-beat-display: none;
+  --surface-assistant-thinking-beat-animation: none;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="vox"]
+  [data-content-search-turn-key]:has(.loading-shimmer-pure-text):not(
+    :has([data-markdown-animated][data-markdown-text-style="assistant-message"])
+  )
+  > div:first-child::before,
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="vox"]
+  [data-content-search-turn-key]:has(.loading-shimmer-pure-text):not(
+    :has([data-markdown-animated][data-markdown-text-style="assistant-message"])
+  )
+  > div:first-child::after {
+  content: none !important;
+  display: none !important;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="vox"]
+  [data-content-search-turn-key]
+  div:has(
+    > [data-content-search-unit-key]
+      [data-markdown-animated][data-markdown-text-style="assistant-message"]
+  ):not(
+    :has(
+      ~ div > [data-content-search-unit-key]
+        [data-markdown-animated][data-markdown-text-style="assistant-message"]
+    )
+  )
+  > [data-content-search-unit-key]::before,
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="vox"]
+  [data-content-search-turn-key]
+  div:has(
+    > [data-content-search-unit-key]
+      [data-markdown-animated][data-markdown-text-style="assistant-message"]
+  ):not(
+    :has(
+      ~ div > [data-content-search-unit-key]
+        [data-markdown-animated][data-markdown-text-style="assistant-message"]
+    )
+  )
+  > [data-content-search-unit-key]::after {
+  content: none !important;
+  display: none !important;
+}
+
+[data-codex-vox-canvas-container="true"] {
+  display: none;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="vox"]
+  [data-codex-vox-canvas-container="true"] {
+  box-sizing: border-box;
+  display: block;
+  overflow: hidden;
+  border-radius: 4px;
+  background: transparent;
+  -webkit-mask-image:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(0 0 0 / 18%) 4%,
+      #000 11%,
+      #000 89%,
+      rgb(0 0 0 / 18%) 96%,
+      transparent 100%
+    );
+  mask-image:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(0 0 0 / 18%) 4%,
+      #000 11%,
+      #000 89%,
+      rgb(0 0 0 / 18%) 96%,
+      transparent 100%
+    );
+  pointer-events: none;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="vox"]
+  [data-codex-vox-location="response"] {
+  position: absolute;
+  z-index: 3;
+  inset: -10px 0 auto;
+  inline-size: 100%;
+  block-size: 28px;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="vox"]
+  [data-codex-vox-location="pretoken"] {
+  position: relative;
+  z-index: 3;
+  inline-size: 100%;
+  block-size: 28px;
+  margin-block-start: 4px;
+}
+
+[data-codex-vox-canvas="true"] {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+/* ECG: darker phosphor in light mode keeps the trace visible on white. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="ecg"] {
+  --surface-assistant-thinking-rail-height: 2px;
+  --surface-assistant-thinking-line:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(8 122 63 / 5%) 10%,
+      rgb(8 122 63 / 12%) 28%,
+      rgb(8 122 63 / 24%) 52%,
+      rgb(9 132 68 / 46%) 72%,
+      rgb(10 142 73 / 76%) 88%,
+      #087a3f 96% 100%
+    ),
+    linear-gradient(rgb(8 122 63 / 18%), rgb(8 122 63 / 18%));
+  --surface-assistant-thinking-shadow:
+    0 0 2px rgb(8 90 47 / 28%),
+    0 0 5px rgb(8 122 63 / 12%);
+  --surface-assistant-thinking-beat-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 14'%3E%3Cpath d='M0 7H8L11 6L13.5 8L17 0.8L21 13L24 7H40' fill='none' stroke='%23087A3F' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='39' cy='7' r='1.15' fill='%230A8E49'/%3E%3C/svg%3E");
+  --surface-assistant-thinking-beat-filter:
+    drop-shadow(0 0 2px rgb(8 122 63 / 42%));
+  --surface-assistant-thinking-animation:
+    surface-assistant-ecg-flow 2.2s linear infinite;
+  --surface-assistant-thinking-beat-animation:
+    surface-assistant-ecg-beat 2.2s linear infinite;
+  --surface-assistant-thinking-beat-width: 40px;
+  --surface-assistant-thinking-beat-height: 14px;
+}
+
+/* Dark themes can afford brighter phosphor and a wider glow halo. */
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="rider"] {
+  --surface-assistant-thinking-line:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(255 16 16 / 6%) 8%,
+      rgb(255 18 18 / 18%) 20%,
+      rgb(255 20 20 / 42%) 34%,
+      #ff2424 43%,
+      #ff4b4f 46%,
+      #ff827d 48% 52%,
+      #ff4b4f 54%,
+      #ff2424 57%,
+      rgb(255 20 20 / 42%) 66%,
+      rgb(255 18 18 / 18%) 80%,
+      rgb(255 16 16 / 6%) 92%,
+      transparent 100%
+    ),
+    linear-gradient(rgb(255 30 30 / 13%), rgb(255 30 30 / 13%));
+  --surface-assistant-thinking-shadow:
+    0 0 4px rgb(255 24 24 / 36%),
+    0 0 8px rgb(255 20 20 / 15%);
+}
+
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="current"] {
+  --surface-assistant-thinking-line:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(139 92 246 / 5%) 5%,
+      rgb(139 92 246 / 14%) 14%,
+      rgb(168 85 247 / 25%) 30%,
+      rgb(168 85 247 / 34%) 50%,
+      rgb(168 85 247 / 25%) 70%,
+      rgb(139 92 246 / 14%) 86%,
+      rgb(139 92 246 / 5%) 95%,
+      transparent 100%
+    ),
+    linear-gradient(rgb(168 85 247 / 9%), rgb(168 85 247 / 9%));
+  --surface-assistant-plasma-filament:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(139 92 246 / 12%) 6%,
+      rgb(168 85 247 / 52%) 18%,
+      rgb(192 132 252 / 86%) 34%,
+      rgb(233 213 255 / 98%) 44%,
+      rgb(255 255 255 / 100%) 47% 53%,
+      rgb(233 213 255 / 98%) 56%,
+      rgb(192 132 252 / 86%) 66%,
+      rgb(168 85 247 / 52%) 82%,
+      rgb(139 92 246 / 12%) 94%,
+      transparent 100%
+    );
+  --surface-assistant-thinking-shadow:
+    0 0 0.5px rgb(168 85 247 / 30%),
+    0 0 1.25px rgb(139 92 246 / 10%);
+  /* Preserve one hard 1 px white-violet core. A larger shadow radius makes
+   * the glow wider than the signal itself and reads as blur on dark themes. */
+  --surface-assistant-thinking-beat-filter:
+    drop-shadow(0 0 0.3px rgb(255 255 255 / 92%))
+    drop-shadow(0 0 1px rgb(168 85 247 / 22%));
+}
+
+/* The frozen vector slot used to be 24 px tall and sat at -7 px. The crisp
+ * 14 px filament slot is centred on the 2 px rail at -2 px instead; keeping
+ * the old offset would vertically separate the core from its low-energy rail. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="current"]
+  [data-content-search-unit-key]:has(
+    [data-markdown-animated][data-markdown-text-style="assistant-message"]
+  )::after {
+  /* The frozen long-form selector has higher specificity, so this alignment
+   * must be authoritative or the 1px filament sits 5px above its 2px rail. */
+  inset-block-start: -2px !important;
+}
+
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="ecg"] {
+  --surface-assistant-thinking-line:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(23 213 82 / 3%) 10%,
+      rgb(28 218 87 / 8%) 28%,
+      rgb(35 224 96 / 17%) 52%,
+      rgb(44 232 106 / 34%) 72%,
+      rgb(58 241 119 / 68%) 88%,
+      #7cff9e 95%,
+      #ffffff 98.5% 100%
+    ),
+    linear-gradient(rgb(45 220 99 / 15%), rgb(45 220 99 / 15%));
+  --surface-assistant-thinking-shadow:
+    0 0 4px rgb(52 232 108 / 34%),
+    0 0 8px rgb(52 232 108 / 13%);
+  --surface-assistant-thinking-beat-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 14'%3E%3Cpath d='M0 7H8L11 6L13.5 8L17 0.8L21 13L24 7H40' fill='none' stroke='%237CFF9E' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='39' cy='7' r='1.2' fill='white'/%3E%3C/svg%3E");
+  --surface-assistant-thinking-beat-filter:
+    drop-shadow(0 0 3px rgb(52 232 108 / 68%));
+}
+
+/* --------------------------------------------------------------------------
+ * Sidebar color system
+ * ----------------------------------------------------------------------- */
+:root {
+  --codex-project-color-gray: #747474;
+  --codex-project-color-red: #c94f58;
+  --codex-project-color-orange: #c96d2d;
+  --codex-project-color-yellow: #ad8421;
+  --codex-project-color-green: #4e9559;
+  --codex-project-color-cyan: #358e9d;
+  --codex-project-color-blue: #4b70c9;
+  --codex-project-color-purple: #7f5ab8;
+}
+
+:root:is(.dark, .electron-dark) {
+  --codex-project-color-gray: #a3a3a3;
+  --codex-project-color-red: #ef6b73;
+  --codex-project-color-orange: #ed8b4a;
+  --codex-project-color-yellow: #d9af38;
+  --codex-project-color-green: #6ebf70;
+  --codex-project-color-cyan: #55b8c6;
+  --codex-project-color-blue: #6e97f0;
+  --codex-project-color-purple: #a984e3;
+}
+
+/* --------------------------------------------------------------------------
+ * Single-column project tree
+ *
+ * Projects stay as native draggable rows with their existing per-project
+ * color menu. Expanded threads use that chosen color for one quiet trunk and
+ * short branches, replacing the dense two-column shelf and chat-bubble icons.
+ * ----------------------------------------------------------------------- */
+:root[data-codex-surface-layout="surface"] [data-codex-project-grid="true"] {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+:root[data-codex-surface-layout="surface"] [data-codex-project-grid-item="true"] {
+  width: 100%;
+  min-width: 0;
+}
+
+:root[data-codex-surface-layout="surface"] [data-codex-project-grid-item="true"]::after {
+  content: none !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"] [data-app-action-sidebar-project-row] {
+  height: 40px !important;
+  min-height: 40px;
+  border-radius: 7px !important;
+  background: transparent !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"][data-codex-project-expanded="false"]
+  [data-app-action-sidebar-project-row],
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"][data-codex-project-expanded="true"]
+  [data-app-action-sidebar-project-row] {
+  height: 40px !important;
+  min-height: 40px;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"] [data-app-action-sidebar-project-row] > div:first-child {
+  gap: 6px !important;
+  padding-inline-start: 5px !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"] [data-sidebar-project-drop-zone="project-icon"] {
+  width: 28px !important;
+  height: 40px !important;
+  margin-inline: 0 !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"] [data-sidebar-project-drop-zone="project-icon"] svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+[data-codex-project-icon] {
+  display: none;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"] [data-sidebar-project-drop-zone="project-icon"]
+  > svg:not([data-codex-project-icon]) {
+  display: none !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"] [data-codex-project-icon] {
+  display: block !important;
+  width: 19px !important;
+  height: 19px !important;
+  stroke-width: 1 !important;
+  opacity: 0.96;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"] [data-app-action-sidebar-project-row]
+  > div:first-child [class*="whitespace-nowrap"] {
+  white-space: nowrap !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"] [data-app-action-sidebar-project-row]
+  .text-fade-truncate {
+  display: block !important;
+  overflow: hidden !important;
+  padding-inline-end: 4px !important;
+  color: var(--surface-ink);
+  font-weight: 560;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap !important;
+  -webkit-line-clamp: unset;
+  mask-image: linear-gradient(90deg, #000 calc(100% - 18px), transparent);
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"] [data-app-action-sidebar-project-row]:hover {
+  background: color-mix(in srgb, var(--surface-ink) 5%, transparent) !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"][data-codex-project-expanded="true"]
+  > .overflow-hidden {
+  box-sizing: border-box;
+  margin-inline-start: 19px;
+  padding: 3px 0 7px 22px;
+  overflow: visible !important;
+  border-block-start: 0;
+  border-inline-start: 1px solid color-mix(
+    in srgb,
+    var(--codex-project-folder-color, var(--codex-project-color-gray)) 72%,
+    transparent
+  );
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"] [data-app-action-sidebar-thread-row] {
+  position: relative;
+  box-sizing: border-box;
+  height: 32px !important;
+  min-height: 32px;
+  padding-inline-start: 11px !important;
+  border-radius: 7px !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"] [data-app-action-sidebar-thread-row]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: -22px;
+  inset-block-start: 50%;
+  width: 14px;
+  height: 1px;
+  background: color-mix(
+    in srgb,
+    var(--codex-project-folder-color, var(--codex-project-color-gray)) 80%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"] [data-app-action-sidebar-thread-row]:hover {
+  background: color-mix(
+    in srgb,
+    var(--codex-project-folder-color, var(--surface-ink)) 7%,
+    transparent
+  ) !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"] [data-app-action-sidebar-thread-row]:is(
+    [data-app-action-sidebar-thread-active="true"],
+    [data-app-action-sidebar-thread-selected="true"]
+  ) {
+  background: color-mix(
+    in srgb,
+    var(--codex-project-folder-color, var(--surface-ink)) 11%,
+    transparent
+  ) !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"] [data-app-action-sidebar-thread-row]:is(
+    [data-app-action-sidebar-thread-active="true"],
+    [data-app-action-sidebar-thread-selected="true"]
+  )::before {
+  background: var(--codex-project-folder-color, var(--surface-ink));
+}
+
+:root[data-codex-surface-layout="surface"] [data-codex-thread-icon="true"] {
+  display: none !important;
+}
+
+/* The existing right-click color panel also offers the packaged Tabler project
+ * glyphs. Each choice remains small, flat and colored by the same project
+ * token as the tree, while Official mode continues to show native folders. */
+[data-codex-project-style-label="true"] {
+  margin-top: 12px;
+  color: var(--color-token-text-secondary, #737373);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+[data-codex-project-icon-grid="true"] {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  justify-items: center;
+  gap: 8px;
+  margin-top: 7px;
+}
+
+[data-codex-project-icon-swatch] {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--color-token-border, rgb(127 127 127 / 20%));
+  border-radius: 7px;
+  color: var(--codex-project-folder-color, var(--color-token-text-secondary, currentColor));
+  background: transparent;
+  cursor: pointer;
+}
+
+[data-codex-project-icon-swatch] svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1 !important;
+}
+
+[data-codex-project-icon-swatch]:hover {
+  color: var(--color-token-text-primary, currentColor);
+  background: var(--color-token-list-hover-background, rgb(127 127 127 / 9%));
+}
+
+[data-codex-project-icon-swatch][data-selected] {
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  outline: 1px solid currentColor;
+  outline-offset: 1px;
+}
+
+[data-codex-project-icon-swatch]:focus-visible {
+  outline: 2px solid var(--color-token-focus-border, currentColor);
+  outline-offset: 2px;
+}
+
+[data-codex-project-color-grid="true"] {
+  margin-top: 7px;
+}
+
+/* --------------------------------------------------------------------------
+ * Independent Assistant indicators
+ *
+ * The response rail and the sidebar Online Core have separate visibility
+ * switches. They share the selected Rider / Plasma / ECG material, but
+ * neither switch disables or changes the other surface.
+ * ----------------------------------------------------------------------- */
+:root[data-codex-surface-layout="surface"][data-codex-online-core-enabled="false"]
+  .app-shell-left-panel [data-codex-online-core="true"] {
+  display: none;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator-enabled="false"]
+  [data-content-search-unit-key]:has(
+    [data-markdown-text-style="assistant-message"]
+  )::before {
+  content: "" !important;
+  inset: 5px 0 auto !important;
+  inline-size: 100% !important;
+  block-size: 1px !important;
+  border-radius: 1px !important;
+  background: var(--surface-line) !important;
+  background-image: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  box-shadow: none !important;
+  opacity: 0.62 !important;
+  filter: none !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator-enabled="false"]
+  [data-content-search-unit-key]:has(
+    [data-markdown-text-style="assistant-message"]
+  )::after {
+  content: none !important;
+  display: none !important;
+  animation: none !important;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator-enabled="false"]
+  [data-content-search-turn-key]:has(.loading-shimmer-pure-text):not(
+    :has([data-markdown-animated][data-markdown-text-style="assistant-message"])
+  )
+  > div:first-child::after {
+  content: "" !important;
+  block-size: 1px !important;
+  border-radius: 1px !important;
+  background: var(--surface-line) !important;
+  background-image: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  box-shadow: none !important;
+  opacity: 0.62 !important;
+  filter: none !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator-enabled="false"]
+  [data-content-search-turn-key]:has(.loading-shimmer-pure-text):not(
+    :has([data-markdown-animated][data-markdown-text-style="assistant-message"])
+  )
+  > div:first-child::before {
+  content: none !important;
+  display: none !important;
+  animation: none !important;
+}
+
+:is(
+  [data-codex-online-core-control="true"],
+  [data-codex-live-activity-control="true"],
+  [data-codex-usage-gauge-control="true"]
+) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-width: 0;
+  margin-top: 8px;
+  padding: 13px 14px;
+  border: 1px solid var(--color-token-border, rgb(127 127 127 / 20%));
+  border-radius: 12px;
+  background: color-mix(
+    in srgb,
+    var(--color-token-bg-secondary, transparent) 52%,
+    transparent
+  );
+}
+
+:is(
+  [data-codex-online-core-copy="true"],
+  [data-codex-live-activity-copy="true"],
+  [data-codex-usage-gauge-copy="true"]
+) {
+  min-width: 0;
+}
+
+:is(
+  [data-codex-online-core-title="true"],
+  [data-codex-live-activity-control-title="true"],
+  [data-codex-usage-gauge-control-title="true"]
+) {
+  color: var(--color-token-text-primary, currentColor);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+:is(
+  [data-codex-online-core-description="true"],
+  [data-codex-live-activity-control-description="true"],
+  [data-codex-usage-gauge-control-description="true"]
+) {
+  margin-top: 2px;
+  color: var(--color-token-text-secondary, rgb(127 127 127));
+  font-size: 12px;
+  line-height: 18px;
+}
+
+[data-codex-assistant-indicator-actions="true"] {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+
+[data-codex-live-activity-actions="true"] {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-width: 0;
+}
+
+[data-codex-usage-gauge-options="true"] {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(52px, 1fr));
+  flex: 0 0 auto;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--color-token-border, rgb(127 127 127 / 20%));
+  border-radius: 9px;
+  background: var(--color-token-bg-primary, transparent);
+}
+
+[data-codex-usage-gauge-mode-value] {
+  min-block-size: 30px;
+  padding-inline: 10px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--color-token-text-secondary, currentColor);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  line-height: 30px;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+[data-codex-usage-gauge-mode-value]:hover {
+  color: var(--color-token-text-primary, currentColor);
+  background: var(--color-token-list-hover-background, rgb(127 127 127 / 8%));
+}
+
+[data-codex-usage-gauge-mode-value][data-active] {
+  color: var(--color-token-text-primary, currentColor);
+  background: var(--color-background-control-opaque, rgb(255 255 255 / 96%));
+  box-shadow: inset 0 0 0 1px var(--color-token-border, rgb(127 127 127 / 18%));
+}
+
+[data-codex-usage-gauge-mode-value]:focus-visible {
+  outline: 2px solid var(--color-token-focus-border, #4f7cff);
+  outline-offset: 1px;
+}
+
+[data-codex-live-activity-accent-options="true"] {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  border: 1px solid var(--color-token-border, rgb(127 127 127 / 20%));
+  border-radius: 9px;
+  background: var(--color-token-bg-primary, transparent);
+}
+
+[data-codex-live-activity-accent-value] {
+  --live-activity-swatch: #8f70db;
+  position: relative;
+  box-sizing: border-box;
+  inline-size: 22px;
+  block-size: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+[data-codex-live-activity-accent-value]::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: var(--live-activity-swatch);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 26%);
+}
+
+[data-codex-live-activity-accent-value="blue"] { --live-activity-swatch: #5793df; }
+[data-codex-live-activity-accent-value="cyan"] { --live-activity-swatch: #36b8ca; }
+[data-codex-live-activity-accent-value="green"] { --live-activity-swatch: #55a968; }
+[data-codex-live-activity-accent-value="amber"] { --live-activity-swatch: #d3912d; }
+[data-codex-live-activity-accent-value="red"] { --live-activity-swatch: #d5515f; }
+
+[data-codex-live-activity-accent-value]:hover {
+  background: var(--color-token-list-hover-background, rgb(127 127 127 / 9%));
+}
+
+[data-codex-live-activity-accent-value][data-active] {
+  background: color-mix(in srgb, var(--live-activity-swatch) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--live-activity-swatch) 72%, transparent);
+}
+
+[data-codex-live-activity-accent-value][data-active]::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: 2px;
+  inset-block-end: 2px;
+  inline-size: 5px;
+  block-size: 5px;
+  border: 1px solid var(--color-background-control-opaque, #ffffff);
+  border-radius: 50%;
+  background: var(--live-activity-swatch);
+}
+
+[data-codex-live-activity-accent-value]:focus-visible {
+  outline: 2px solid var(--color-token-focus-border, #4f7cff);
+  outline-offset: 1px;
+}
+
+[data-codex-assistant-indicator-options="true"] {
+  grid-template-columns: repeat(4, minmax(58px, 1fr));
+}
+
+:is(
+  [data-codex-online-core-switch="true"],
+  [data-codex-assistant-enabled-switch="true"],
+  [data-codex-live-activity-switch="true"]
+) {
+  position: relative;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  inline-size: 42px;
+  block-size: 28px;
+  padding: 2px;
+  border: 1px solid var(--color-token-border, rgb(127 127 127 / 28%));
+  border-radius: 999px;
+  background: color-mix(
+    in srgb,
+    var(--color-token-text-secondary, rgb(127 127 127)) 22%,
+    transparent
+  );
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+:is(
+  [data-codex-online-core-knob="true"],
+  [data-codex-assistant-enabled-knob="true"],
+  [data-codex-live-activity-knob="true"]
+) {
+  display: block;
+  inline-size: 18px;
+  block-size: 18px;
+  border-radius: 50%;
+  background: var(--color-background-control-opaque, #ffffff);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 24%);
+  transform: translateX(0);
+  transition: transform 160ms ease;
+}
+
+:is(
+  [data-codex-online-core-switch="true"],
+  [data-codex-assistant-enabled-switch="true"],
+  [data-codex-live-activity-switch="true"]
+)[data-active] {
+  border-color: #4f7cff;
+  background: #4f7cff;
+  box-shadow: 0 0 0 1px rgb(79 124 255 / 16%);
+}
+
+[data-codex-online-core-switch="true"][data-active]
+  [data-codex-online-core-knob="true"],
+[data-codex-assistant-enabled-switch="true"][data-active]
+  [data-codex-assistant-enabled-knob="true"],
+[data-codex-live-activity-switch="true"][data-active]
+  [data-codex-live-activity-knob="true"] {
+  transform: translateX(18px);
+}
+
+:is(
+  [data-codex-online-core-switch="true"],
+  [data-codex-assistant-enabled-switch="true"],
+  [data-codex-live-activity-switch="true"]
+):focus-visible {
+  outline: 2px solid var(--color-token-focus-border, #4f7cff);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  [data-codex-assistant-indicator-control="true"] {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  :is(
+    [data-codex-online-core-control="true"],
+    [data-codex-live-activity-control="true"],
+    [data-codex-usage-gauge-control="true"]
+  ) {
+    align-items: center;
+  }
+
+  [data-codex-assistant-indicator-actions="true"] {
+    width: 100%;
+  }
+
+  [data-codex-live-activity-actions="true"] {
+    flex-wrap: wrap;
+  }
+
+  [data-codex-usage-gauge-options="true"] {
+    grid-template-columns: repeat(3, minmax(48px, 1fr));
+  }
+}
+
+/* Live Activity status output replaces speculative progress segments. */
+[data-codex-live-progress-meta="true"] {
+  display: none !important;
+}
+
+[data-codex-live-activity="true"] {
+  border-color: var(--codex-live-border-violet);
+  background: rgb(24 24 26 / 46%);
+}
+
+[data-codex-live-header="true"] {
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+[data-codex-live-state-label="true"] {
+  margin-inline-end: auto;
+}
+
+[data-codex-live-title="true"] {
+  margin-inline-start: auto;
+}
+
+[data-codex-live-title="true"]:empty {
+  display: none;
+}
+
+[data-live-state="active"] [data-codex-live-title="true"],
+[data-live-state="complete"] [data-codex-live-title="true"],
+[data-live-state="idle"] [data-codex-live-title="true"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+[data-codex-live-state-label="true"] > i {
+  display: none;
+}
+
+[data-codex-live-title="true"]::before {
+  content: "";
+  inline-size: 6px;
+  block-size: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+[data-live-state="active"] [data-codex-live-title="true"] {
+  color: #9da7b1;
+}
+
+[data-live-state="active"] [data-codex-live-title="true"]::before {
+  background: #70e9ef;
+  box-shadow: 0 0 5px rgb(112 233 239 / 52%);
+  animation: codex-live-running-dot 0.5s steps(1, end) infinite;
+}
+
+[data-live-state="complete"] [data-codex-live-title="true"] {
+  color: #55d98b;
+  text-shadow: 0 0 8px rgb(85 217 139 / 24%);
+}
+
+[data-live-state="complete"] [data-codex-live-title="true"]::before {
+  background: #55d98b;
+  box-shadow: 0 0 7px rgb(85 217 139 / 48%);
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+[data-live-state="idle"] [data-codex-live-title="true"] {
+  color: var(--codex-live-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+[data-live-state="idle"] [data-codex-live-title="true"]::before {
+  background: var(--codex-live-muted);
+  box-shadow: 0 0 5px rgb(190 201 214 / 22%);
+}
+
+[data-live-state="complete"] [data-codex-live-state-label="true"],
+[data-live-state="idle"] [data-codex-live-state-label="true"] {
+  display: none;
+}
+
+@keyframes codex-live-status-dot {
+  0%, 100% { opacity: 0.58; transform: scale(0.82); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+@keyframes codex-live-running-dot {
+  0%, 44% { opacity: 1; }
+  45%, 100% { opacity: 0.16; }
+}
+
+[data-codex-live-collapse-toggle="true"] {
+  flex: 0 0 auto;
+  /* A full 32px target keeps the visual caret small without making manual
+     collapse depend on a pixel-perfect click at the card edge. */
+  inline-size: 32px;
+  block-size: 32px;
+  margin-block: -7px;
+  margin-inline: -3px -7px;
+  padding: 0;
+  border: 0;
+  color: var(--codex-live-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  line-height: 16px;
+  cursor: pointer;
+  opacity: 0.72;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 2;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[data-codex-live-collapse-toggle="true"]:hover {
+  color: var(--codex-live-text);
+  opacity: 1;
+}
+
+[data-codex-live-collapse-toggle="true"]:focus-visible {
+  outline: 2px solid var(--color-token-focus-border, #4f7cff);
+  outline-offset: 1px;
+}
+
+[data-codex-live-progress="true"] {
+  display: none !important;
+}
+
+[data-codex-live-progress-meta="true"] {
+  margin-top: 0;
+}
+
+[data-codex-live-progress-value="true"] {
+  color: var(--codex-live-text);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+[data-live-state="active"] [data-codex-live-progress-value="true"] {
+  background: linear-gradient(100deg, #ff4f9a 0%, #a76cff 46%, #45d8ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: none;
+}
+
+[data-live-state="complete"] [data-codex-live-progress-value="true"] {
+  color: #55d98b;
+  text-shadow: 0 0 8px rgb(85 217 139 / 24%);
+}
+
+[data-live-state="active"] [data-codex-live-state-text="true"] {
+  color: var(--codex-live-text);
+}
+
+[data-live-state="complete"] [data-codex-live-state-text="true"] {
+  color: #55d98b;
+}
+
+@keyframes codex-live-status-breathe {
+  0%, 100% { opacity: 0.58; filter: brightness(0.92); }
+  50% { opacity: 1; filter: brightness(1.35); }
+}
+
+/* --------------------------------------------------------------------------
+ * Sidebar online core
+ *
+ * This is independent from the per-response status rail. It remains alive at
+ * low energy while Codex is idle and intensifies whenever the current task is
+ * thinking or streaming. Set --codex-online-core-display:none to hide only it.
+ * ----------------------------------------------------------------------- */
+/* One complete Rider cycle has the same 2.8 s semantics as the response rail:
+ * left -> right -> left. Using `alternate` here previously made the same
+ * numeric duration mean only one leg, so the sidebar scanner ran at half the
+ * perceived speed while Assistant was active. */
+@keyframes codex-online-core-rider-cycle {
+  0%, 100% { inset-inline-start: -82px; }
+  50% { inset-inline-start: 100%; }
+}
+
+@keyframes codex-online-core-plasma-breathe {
+  0%, 100% {
+    inset-inline-start: 50%;
+    opacity: 0.62;
+    transform: translate(-50%, -50%);
+  }
+
+  46% {
+    inset-inline-start: 50%;
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+
+  72% {
+    inset-inline-start: 50%;
+    opacity: 0.78;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@keyframes codex-online-core-ecg-flow {
+  0% {
+    background-position: -76px 0, 0 0;
+    opacity: 0.76;
+    filter: brightness(1);
+  }
+
+  18% {
+    opacity: 0.8;
+    filter: brightness(1);
+  }
+
+  21% {
+    opacity: 1;
+    filter: brightness(1.5);
+  }
+
+  24% {
+    opacity: 0.82;
+    filter: brightness(1);
+  }
+
+  29% {
+    opacity: 0.98;
+    filter: brightness(1.34);
+  }
+
+  33% {
+    opacity: 0.8;
+    filter: brightness(1);
+  }
+
+  100% {
+    background-position: calc(100% + 76px) 0, 0 0;
+    opacity: 0.76;
+    filter: brightness(1);
+  }
+}
+
+@keyframes codex-online-core-ecg-beat {
+  0% {
+    inset-inline-start: 0;
+    opacity: 0;
+    transform: translateX(-100%) translateY(-50%) scaleX(0.92) scaleY(0.82);
+  }
+
+  17%,
+  25%,
+  34% {
+    opacity: 0;
+    transform: translateX(-100%) translateY(-50%) scaleX(0.92) scaleY(0.82);
+  }
+
+  20% {
+    opacity: 0.94;
+    transform: translateX(-100%) translateY(-50%) scaleX(1) scaleY(1.14);
+  }
+
+  22% {
+    opacity: 0.3;
+    transform: translateX(-100%) translateY(-50%) scaleX(1.04) scaleY(0.88);
+  }
+
+  29% {
+    opacity: 0.82;
+    transform: translateX(-100%) translateY(-50%) scaleX(0.98) scaleY(1.08);
+  }
+
+  32% {
+    opacity: 0.24;
+    transform: translateX(-100%) translateY(-50%) scaleX(1.02) scaleY(0.9);
+  }
+
+  100% {
+    inset-inline-start: calc(100% + 76px);
+    opacity: 0;
+    transform: translateX(-100%) translateY(-50%) scaleX(0.92) scaleY(0.82);
+  }
+}
+
+[data-codex-online-core="true"] {
+  display: none;
+}
+
+:root[data-codex-surface-layout="surface"] {
+  --codex-online-core-display: flex;
+  --codex-online-core-width: 176px;
+  --codex-online-core-min-width: 56px;
+  --codex-online-core-idle-opacity: 0.5;
+  --codex-online-core-active-opacity: 1;
+  --codex-online-core-idle-duration: 5.6s;
+  --codex-online-core-active-duration: 2.8s;
+}
+
+:root[data-codex-surface-layout="surface"]
+  .app-shell-left-panel [data-codex-online-core="true"] {
+  --codex-online-core-duration: var(--codex-online-core-idle-duration);
+  --codex-online-core-track-height: 1px;
+  --codex-online-core-runner-height: 5px;
+  position: relative;
+  display: var(--codex-online-core-display);
+  flex: 1 1 var(--codex-online-core-width);
+  align-items: center;
+  align-self: center;
+  justify-content: center;
+  min-inline-size: var(--codex-online-core-min-width);
+  max-inline-size: var(--codex-online-core-width);
+  block-size: 20px;
+  margin-inline: auto;
+  overflow: hidden;
+  opacity: var(--codex-online-core-idle-opacity);
+  pointer-events: none;
+  contain: layout paint;
+  transition: opacity 180ms ease, filter 180ms ease;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-online-core-state="active"]
+  .app-shell-left-panel [data-codex-online-core="true"] {
+  --codex-online-core-duration: var(--codex-online-core-active-duration);
+  --codex-online-core-track-height: 2px;
+  --codex-online-core-runner-height: 6px;
+  opacity: var(--codex-online-core-active-opacity);
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-online-core-rail="true"] {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 50%;
+  block-size: var(--codex-online-core-track-height);
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(var(--codex-online-core-rgb) / 10%) 10%,
+    rgb(var(--codex-online-core-rgb) / 32%) 38%,
+    rgb(var(--codex-online-core-rgb) / 48%) 50%,
+    rgb(var(--codex-online-core-rgb) / 32%) 62%,
+    rgb(var(--codex-online-core-rgb) / 10%) 90%,
+    transparent 100%
+  );
+  box-shadow: 0 0 4px rgb(var(--codex-online-core-rgb) / 18%);
+  transform: translateY(-50%);
+  transition: block-size 180ms ease, box-shadow 180ms ease;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-online-core-mark="true"] {
+  position: absolute;
+  z-index: 2;
+  inset-block-start: 50%;
+  inline-size: 76px;
+  block-size: var(--codex-online-core-runner-height);
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(var(--codex-online-core-rgb) / 8%) 12%,
+    rgb(var(--codex-online-core-rgb) / 34%) 34%,
+    rgb(var(--codex-online-core-rgb) / 90%) 46%,
+    #ffffff 50%,
+    rgb(var(--codex-online-core-rgb) / 90%) 54%,
+    rgb(var(--codex-online-core-rgb) / 34%) 66%,
+    rgb(var(--codex-online-core-rgb) / 8%) 88%,
+    transparent 100%
+  );
+  filter: drop-shadow(0 0 2px rgb(var(--codex-online-core-rgb) / 42%));
+  transform: translateY(-50%);
+  animation: codex-online-core-rider-cycle var(--codex-online-core-duration) ease-in-out infinite;
+  transition: block-size 180ms ease, filter 180ms ease;
+}
+
+/* Rider red: deliberate back-and-forth scanner. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"] {
+  --codex-online-core-rgb: 204 28 38;
+  --codex-online-core-idle-duration: 5.6s;
+  --codex-online-core-active-duration: 2.8s;
+}
+
+/* The 176 px corner treatment needs a smaller optical core than the wide
+ * response rail. Keep the accepted red material, but avoid the six-pixel
+ * capsule and broad halo that made the compact mark read soft. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"]
+  .app-shell-left-panel [data-codex-online-core="true"] {
+  --codex-online-core-runner-height: 4px;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"]
+  [data-codex-online-core-rail="true"] {
+  box-shadow: 0 0 1.5px rgb(var(--codex-online-core-rgb) / 14%);
+}
+
+/* Violet-white plasma breathe: the full rail remains softly conductive. Active
+ * mode breathes at the response pace; idle mode keeps the same material alive
+ * at half speed. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="current"] {
+  --codex-online-core-rgb: 116 38 184;
+  --codex-online-core-idle-duration: 6.4s;
+  --codex-online-core-active-duration: 3.2s;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="current"]
+  [data-codex-online-core-rail="true"] {
+  background-image: var(--surface-assistant-thinking-line);
+  background-position: center, center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%, 100% 100%;
+  box-shadow: var(--surface-assistant-thinking-shadow);
+  animation: surface-assistant-plasma-rail-breathe var(--codex-online-core-duration) ease-in-out infinite;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="current"]
+  [data-codex-online-core-mark="true"] {
+  inset-inline-start: 50%;
+  inline-size: var(--surface-assistant-thinking-beat-width);
+  block-size: var(--surface-assistant-thinking-beat-height);
+  border-radius: 999px;
+  background-image: var(--surface-assistant-thinking-beat-paint);
+  background-position: var(--surface-assistant-thinking-beat-position);
+  background-repeat: no-repeat;
+  background-size: var(--surface-assistant-thinking-beat-size);
+  -webkit-mask-image: var(--surface-assistant-thinking-beat-mask);
+  mask-image: var(--surface-assistant-thinking-beat-mask);
+  filter: var(--surface-assistant-thinking-beat-filter);
+  animation: codex-online-core-plasma-breathe var(--codex-online-core-duration) ease-in-out infinite;
+}
+
+/* VOX cyan-white Canvas oscilloscope. The Online Core remains continuously
+ * mounted; idle mode is slowed by the renderer and active mode runs at the
+ * supplied signal speed. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="vox"] {
+  --codex-online-core-width: 192px;
+  --codex-online-core-rgb: 0 240 255;
+  --codex-online-core-idle-opacity: 0.82;
+  --codex-online-core-active-opacity: 1;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="vox"]
+  .app-shell-left-panel [data-codex-online-core="true"],
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="vox"][data-codex-online-core-state="active"]
+  .app-shell-left-panel [data-codex-online-core="true"] {
+  --codex-online-core-track-height: 1px;
+  --codex-online-core-runner-height: 1px;
+  block-size: 24px;
+  border-radius: 4px;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="vox"]
+  [data-codex-online-core-rail="true"],
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="vox"]
+  [data-codex-online-core-mark="true"] {
+  display: none;
+  animation: none;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="vox"]
+  .app-shell-left-panel [data-codex-vox-location="online"] {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 28px;
+}
+
+/* ECG green: one-way pulse with the same waveform as the response rail. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="ecg"] {
+  --codex-online-core-rgb: 8 122 63;
+  --codex-online-core-idle-duration: 4.8s;
+  --codex-online-core-active-duration: 2.2s;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="ecg"]
+  [data-codex-online-core-rail="true"] {
+  background-image:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(8 122 63 / 4%) 10%,
+      rgb(8 122 63 / 10%) 28%,
+      rgb(8 122 63 / 21%) 52%,
+      rgb(9 132 68 / 42%) 72%,
+      rgb(10 142 73 / 72%) 88%,
+      #087a3f 96% 100%
+    ),
+    linear-gradient(rgb(8 122 63 / 18%), rgb(8 122 63 / 18%));
+  background-position: -76px 0, 0 0;
+  background-repeat: no-repeat;
+  background-size: 76px 100%, 100% 100%;
+  box-shadow:
+    0 0 2px rgb(8 90 47 / 28%),
+    0 0 5px rgb(8 122 63 / 12%);
+  animation: codex-online-core-ecg-flow var(--codex-online-core-duration) linear infinite;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="ecg"]
+  [data-codex-online-core-mark="true"] {
+  inline-size: 40px;
+  block-size: 14px;
+  border-radius: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 14'%3E%3Cpath d='M0 7H8L11 6L13.5 8L17 0.8L21 13L24 7H40' fill='none' stroke='%23087A3F' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='39' cy='7' r='1.15' fill='%230A8E49'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  filter: drop-shadow(0 0 2px rgb(8 122 63 / 42%));
+  animation: codex-online-core-ecg-beat var(--codex-online-core-duration) linear infinite;
+}
+
+/* The Rider highlight is a short pale-red plateau, not a detached white dot. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"]
+  [data-codex-online-core-mark="true"] {
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(166 18 28 / 8%) 12%,
+      rgb(204 28 38 / 38%) 34%,
+      #e23843 43%,
+      #ef5058 46%,
+      #f97977 48% 52%,
+      #ef5058 54%,
+      #e23843 57%,
+      rgb(204 28 38 / 38%) 66%,
+      rgb(166 18 28 / 8%) 88%,
+      transparent 100%
+    );
+  filter: drop-shadow(0 0 1px rgb(164 18 28 / 38%));
+}
+
+/* Dark-mode phosphor keeps the accepted luminous energy; light mode above
+ * uses denser pigments so the same geometry remains visible on white. */
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="rider"] {
+  --codex-online-core-rgb: 255 36 36;
+}
+
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="rider"]
+  [data-codex-online-core-rail="true"] {
+  box-shadow: 0 0 1.5px rgb(255 24 24 / 18%);
+}
+
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="rider"]
+  [data-codex-online-core-mark="true"] {
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(255 16 16 / 8%) 12%,
+      rgb(255 24 24 / 42%) 34%,
+      #ff2424 43%,
+      #ff4b4f 46%,
+      #ff827d 48% 52%,
+      #ff4b4f 54%,
+      #ff2424 57%,
+      rgb(255 24 24 / 42%) 66%,
+      rgb(255 16 16 / 8%) 88%,
+      transparent 100%
+    );
+  filter: drop-shadow(0 0 1.25px rgb(255 24 24 / 48%));
+}
+
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="current"] {
+  --codex-online-core-rgb: 168 85 247;
+}
+
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="current"]
+  [data-codex-online-core-rail="true"] {
+  background-image: var(--surface-assistant-thinking-line);
+  box-shadow: var(--surface-assistant-thinking-shadow);
+}
+
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="current"]
+  [data-codex-online-core-mark="true"] {
+  filter: var(--surface-assistant-thinking-beat-filter);
+}
+
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="ecg"] {
+  --codex-online-core-rgb: 52 232 108;
+}
+
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="ecg"]
+  [data-codex-online-core-rail="true"] {
+  background-image:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(23 213 82 / 3%) 10%,
+      rgb(28 218 87 / 8%) 28%,
+      rgb(35 224 96 / 17%) 52%,
+      rgb(44 232 106 / 34%) 72%,
+      rgb(58 241 119 / 68%) 88%,
+      #7cff9e 95%,
+      #ffffff 98.5% 100%
+    ),
+    linear-gradient(rgb(45 220 99 / 15%), rgb(45 220 99 / 15%));
+  box-shadow:
+    0 0 4px rgb(52 232 108 / 34%),
+    0 0 8px rgb(52 232 108 / 13%);
+}
+
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="ecg"]
+  [data-codex-online-core-mark="true"] {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 14'%3E%3Cpath d='M0 7H8L11 6L13.5 8L17 0.8L21 13L24 7H40' fill='none' stroke='%237CFF9E' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='39' cy='7' r='1.2' fill='white'/%3E%3C/svg%3E");
+  filter: drop-shadow(0 0 3px rgb(52 232 108 / 58%));
+}

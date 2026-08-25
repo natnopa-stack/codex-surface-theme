@@ -1,0 +1,2214 @@
+/*
+ * Codex Surface layout
+ *
+ * Surface is an independent presentation layer. Codex's native System / Light /
+ * Dark theme remains authoritative and can be changed without removing the
+ * floating panels, response cards, or composer treatment.
+ */
+
+@property --surface-composer-ring-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@property --surface-assistant-current-envelope {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --surface-assistant-current-flicker {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+@property --surface-assistant-current-jitter-x {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --surface-assistant-current-stretch {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+@keyframes surface-composer-ring-flow {
+  to {
+    --surface-composer-ring-angle: 1turn;
+  }
+}
+
+@keyframes surface-assistant-rider-sweep {
+  0%,
+  100% {
+    background-position: -110px 0, 0 0;
+  }
+
+  50% {
+    background-position: calc(100% + 110px) 0, 0 0;
+  }
+}
+
+@keyframes surface-assistant-current-flow {
+  0%,
+  100% { opacity: 1; }
+}
+
+@keyframes surface-assistant-current-spark {
+  0%,
+  8% {
+    inset-inline-start: 8px;
+    --surface-assistant-current-envelope: 0;
+    transform:
+      translateX(var(--surface-assistant-current-jitter-x))
+      scaleX(var(--surface-assistant-current-stretch));
+  }
+
+  12% {
+    inset-inline-start: 8px;
+    --surface-assistant-current-envelope: 1;
+    transform:
+      translateX(var(--surface-assistant-current-jitter-x))
+      scaleX(var(--surface-assistant-current-stretch));
+  }
+
+  82% {
+    inset-inline-start: calc(100% - 188px);
+    --surface-assistant-current-envelope: 1;
+    transform:
+      translateX(var(--surface-assistant-current-jitter-x))
+      scaleX(var(--surface-assistant-current-stretch));
+  }
+
+  88%,
+  100% {
+    inset-inline-start: calc(100% - 188px);
+    --surface-assistant-current-envelope: 0;
+    transform:
+      translateX(var(--surface-assistant-current-jitter-x))
+      scaleX(var(--surface-assistant-current-stretch));
+  }
+}
+
+/* A separate high-frequency voltage instability is deliberately additive to
+ * the one-way launch. It can stretch, twitch, and almost break contact without
+ * ever reversing the spark's actual travel direction. */
+@keyframes surface-assistant-current-flicker {
+  0% {
+    --surface-assistant-current-flicker: 1;
+    --surface-assistant-current-jitter-x: 0px;
+    --surface-assistant-current-stretch: 1;
+  }
+
+  20% {
+    --surface-assistant-current-flicker: 0.86;
+    --surface-assistant-current-jitter-x: 2px;
+    --surface-assistant-current-stretch: 1.03;
+  }
+
+  40% {
+    --surface-assistant-current-flicker: 1;
+    --surface-assistant-current-jitter-x: -1px;
+    --surface-assistant-current-stretch: 0.97;
+  }
+
+  60% {
+    --surface-assistant-current-flicker: 0.55;
+    --surface-assistant-current-jitter-x: 1px;
+    --surface-assistant-current-stretch: 1.06;
+  }
+
+  80% {
+    --surface-assistant-current-flicker: 1;
+    --surface-assistant-current-jitter-x: 2px;
+    --surface-assistant-current-stretch: 0.99;
+  }
+
+  100% {
+    --surface-assistant-current-flicker: 0.9;
+    --surface-assistant-current-jitter-x: 0px;
+    --surface-assistant-current-stretch: 1;
+  }
+}
+
+/* Four independently displaced vector frames prevent the discharge from
+ * reading as either a static wave or a mechanically repeating sawtooth. */
+@keyframes surface-assistant-current-frames {
+  0%,
+  24.99% { background-position: 0% 50%; }
+
+  25%,
+  49.99% { background-position: 33.333% 50%; }
+
+  50%,
+  74.99% { background-position: 66.667% 50%; }
+
+  75%,
+  100% { background-position: 100% 50%; }
+}
+
+@keyframes surface-assistant-ecg-flow {
+  0% {
+    background-position: -196px 0, 0 0;
+    opacity: 0.82;
+    filter: brightness(1);
+  }
+
+  /* A restrained lub-dub pulse: the phosphor head brightens twice without
+   * turning the two-pixel rail into a chunky waveform. */
+  18% {
+    opacity: 0.84;
+    filter: brightness(1);
+  }
+
+  21% {
+    opacity: 1;
+    filter: brightness(1.48);
+  }
+
+  24% {
+    opacity: 0.84;
+    filter: brightness(1);
+  }
+
+  29% {
+    opacity: 0.97;
+    filter: brightness(1.3);
+  }
+
+  33% {
+    opacity: 0.84;
+    filter: brightness(1);
+  }
+
+  100% {
+    background-position: calc(100% + 196px) 0, 0 0;
+    opacity: 0.84;
+    filter: brightness(1);
+  }
+}
+
+@keyframes surface-assistant-ecg-beat {
+  0% {
+    inset-inline-start: 0;
+    opacity: 0;
+    transform: translateX(-100%) scaleX(0.92) scaleY(0.82);
+  }
+
+  17%,
+  25%,
+  34% {
+    opacity: 0;
+    transform: translateX(-100%) scaleX(0.92) scaleY(0.82);
+  }
+
+  20% {
+    opacity: 0.84;
+    transform: translateX(-100%) scaleX(1) scaleY(1.08);
+  }
+
+  22% {
+    opacity: 0.28;
+    transform: translateX(-100%) scaleX(1.04) scaleY(0.9);
+  }
+
+  29% {
+    opacity: 0.72;
+    transform: translateX(-100%) scaleX(0.98) scaleY(1.02);
+  }
+
+  32% {
+    opacity: 0.22;
+    transform: translateX(-100%) scaleX(1.02) scaleY(0.92);
+  }
+
+  100% {
+    inset-inline-start: calc(100% + 196px);
+    opacity: 0;
+    transform: translateX(-100%) scaleX(0.92) scaleY(0.82);
+  }
+}
+
+/* Appearance integration stays visible even when Surface is off. */
+[data-codex-surface-layout-control="true"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid var(--color-token-border, rgb(127 127 127 / 20%));
+  border-radius: 12px;
+  background: color-mix(
+    in srgb,
+    var(--color-token-bg-secondary, transparent) 52%,
+    transparent
+  );
+}
+
+[data-codex-surface-layout-copy="true"] {
+  min-width: 0;
+}
+
+[data-codex-surface-layout-title="true"] {
+  color: var(--color-token-text-primary, currentColor);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+[data-codex-surface-layout-description="true"] {
+  margin-top: 2px;
+  color: var(--color-token-text-secondary, rgb(127 127 127));
+  font-size: 12px;
+  line-height: 18px;
+}
+
+[data-codex-surface-layout-options="true"] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(64px, 1fr));
+  flex: 0 0 auto;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--color-token-border, rgb(127 127 127 / 20%));
+  border-radius: 10px;
+  background: var(--color-token-bg-primary, transparent);
+}
+
+[data-codex-surface-layout-value] {
+  min-height: 30px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--color-token-text-secondary, currentColor);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  line-height: 30px;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+[data-codex-surface-layout-value]:hover {
+  color: var(--color-token-text-primary, currentColor);
+  background: var(--color-token-list-hover-background, rgb(127 127 127 / 8%));
+}
+
+[data-codex-surface-layout-value][data-active] {
+  color: var(--color-token-text-primary, currentColor);
+  background: var(--color-background-control-opaque, rgb(255 255 255 / 96%));
+  box-shadow:
+    0 0 0 1px var(--color-token-border, rgb(127 127 127 / 18%)),
+    0 2px 7px rgb(0 0 0 / 7%);
+}
+
+[data-codex-surface-layout-value]:focus-visible {
+  outline: 2px solid var(--color-token-focus-border, currentColor);
+  outline-offset: 1px;
+}
+
+[data-codex-assistant-indicator-control="true"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-width: 0;
+  margin-top: 8px;
+  padding: 13px 14px;
+  border: 1px solid var(--color-token-border, rgb(127 127 127 / 20%));
+  border-radius: 12px;
+  background: color-mix(
+    in srgb,
+    var(--color-token-bg-secondary, transparent) 52%,
+    transparent
+  );
+}
+
+[data-codex-assistant-indicator-copy="true"] {
+  min-width: 0;
+}
+
+[data-codex-assistant-indicator-title="true"] {
+  color: var(--color-token-text-primary, currentColor);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+[data-codex-assistant-indicator-description="true"] {
+  margin-top: 2px;
+  color: var(--color-token-text-secondary, rgb(127 127 127));
+  font-size: 12px;
+  line-height: 18px;
+}
+
+[data-codex-assistant-indicator-options="true"] {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(66px, 1fr));
+  flex: 0 0 auto;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--color-token-border, rgb(127 127 127 / 20%));
+  border-radius: 10px;
+  background: var(--color-token-bg-primary, transparent);
+}
+
+[data-codex-assistant-indicator-value] {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--color-token-text-secondary, currentColor);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  line-height: 30px;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+[data-codex-assistant-indicator-value]:hover {
+  color: var(--color-token-text-primary, currentColor);
+  background: var(--color-token-list-hover-background, rgb(127 127 127 / 8%));
+}
+
+[data-codex-assistant-indicator-value][data-active] {
+  color: var(--color-token-text-primary, currentColor);
+  background: var(--color-background-control-opaque, rgb(255 255 255 / 96%));
+  box-shadow:
+    0 0 0 1px var(--color-token-border, rgb(127 127 127 / 18%)),
+    0 2px 7px rgb(0 0 0 / 7%);
+}
+
+[data-codex-assistant-indicator-value]:focus-visible {
+  outline: 2px solid var(--color-token-focus-border, currentColor);
+  outline-offset: 1px;
+}
+
+/* The light Surface palette uses equal RGB channels so its gray hierarchy
+ * cannot pick up the yellow-green cast of warm native theme tokens. */
+:root[data-codex-surface-layout="surface"] {
+  --app-canvas: #ffffff;
+  --sidebar-surface: #f3f3f3;
+  --main-surface: #ffffff;
+  --secondary-surface: #f7f7f7;
+  --assistant-surface: #f6f6f6;
+  --composer-surface: #ffffff;
+  --neutral-border: rgb(0 0 0 / 6.5%);
+  --neutral-shadow: rgb(0 0 0 / 7%);
+  --surface-base: var(--app-canvas);
+  --surface-sidebar: var(--sidebar-surface);
+  --surface-main: var(--main-surface);
+  --surface-assistant: var(--assistant-surface);
+  --surface-composer: var(--composer-surface);
+  --surface-dialog: var(--secondary-surface);
+  --surface-code: var(--secondary-surface);
+  --surface-ink: var(--color-token-text-primary, #202121);
+  --surface-secondary: var(--color-token-text-secondary, #686a6a);
+  --surface-line: var(--neutral-border);
+  --surface-line-strong: var(--neutral-border);
+  --surface-shadow-panel: var(--neutral-shadow);
+  --surface-shadow-composer: transparent;
+  --surface-shadow-response: var(--neutral-shadow);
+  --surface-shadow-dialog: var(--neutral-shadow);
+  --surface-topbar-line: var(--neutral-border);
+  --surface-gap: 8px;
+  --surface-radius: 12px;
+  --surface-response-radius: 10px;
+  --surface-user-bubble-radius: 12px;
+  --surface-composer-radius: 15px;
+  --surface-composer-ring-opacity: 0.96;
+  --surface-composer-ring-duration: 4s;
+  --surface-composer-ring-mask-mid: 0.45;
+  --surface-composer-ring-mask-bottom: 0.04;
+  --surface-composer-ring-track: rgb(0 0 0 / 9%);
+  --surface-composer-ring-cyan: rgb(0 205 232);
+  --surface-composer-ring-magenta: rgb(218 0 236);
+  --surface-assistant-thinking-rail-height: 3px;
+  /* Knight Rider: one scanner packet crosses the full rail. A fixed rail mask
+   * hides both ends, so the light fades into a central viewing window without
+   * a second background layer crossing the track during direction changes. */
+  --surface-assistant-thinking-line:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(255 16 16 / 6%) 8%,
+      rgb(255 18 18 / 16%) 20%,
+      rgb(255 20 20 / 36%) 34%,
+      rgb(255 24 24 / 78%) 44%,
+      #ff2424 48%,
+      #ffffff 50%,
+      #ff2424 52%,
+      rgb(255 24 24 / 78%) 56%,
+      rgb(255 20 20 / 36%) 66%,
+      rgb(255 18 18 / 16%) 80%,
+      rgb(255 16 16 / 6%) 92%,
+      transparent 100%
+    ),
+    linear-gradient(rgb(255 30 30 / 11%), rgb(255 30 30 / 11%));
+  --surface-assistant-thinking-position:
+    -110px 0,
+    0 0;
+  --surface-assistant-thinking-size: 220px 100%, 100% 100%;
+  --surface-assistant-thinking-rail-mask:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(0 0 0 / 14%) 4%,
+      #000000 12%,
+      #000000 88%,
+      rgb(0 0 0 / 14%) 96%,
+      transparent 100%
+    );
+  --surface-assistant-thinking-shadow:
+    0 0 4px rgb(255 24 24 / 34%),
+    0 0 8px rgb(255 20 20 / 14%);
+  --surface-assistant-thinking-animation:
+    surface-assistant-rider-sweep 2.8s ease-in-out infinite;
+  --surface-assistant-thinking-beat-display: none;
+  --surface-assistant-thinking-beat-animation: none;
+  --surface-assistant-thinking-beat-image: none;
+  --surface-assistant-thinking-beat-filter:
+    drop-shadow(0 0 1.5px rgb(168 85 247 / 64%));
+  --surface-assistant-thinking-beat-width: 34px;
+  --surface-assistant-thinking-beat-height: 12px;
+}
+
+/* Dark and custom-dark Codex themes keep their own palette. Surface only
+ * derives nearby layers from native tokens, so changing the built-in theme is
+ * still visible while the structural treatment remains enabled. */
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark) {
+  --surface-base: color-mix(
+    in srgb,
+    var(--color-background-surface-under, #171817) 88%,
+    #000000
+  );
+  --surface-sidebar: color-mix(
+    in srgb,
+    var(--color-token-side-bar-background, #20211f) 94%,
+    var(--color-token-foreground, #ffffff) 6%
+  );
+  --surface-main: var(--color-token-main-surface-primary, #1b1c1b);
+  --surface-assistant: color-mix(
+    in srgb,
+    var(--color-token-main-surface-primary, #1b1c1b) 91%,
+    var(--color-token-foreground, #ffffff) 9%
+  );
+  --surface-composer: color-mix(
+    in srgb,
+    var(--color-token-main-surface-primary, #1b1c1b) 92%,
+    var(--color-token-foreground, #ffffff) 8%
+  );
+  --surface-dialog: var(--color-token-dropdown-background, #262725);
+  --surface-code: var(--color-token-bg-secondary, #20211f);
+  --surface-ink: var(--color-token-text-primary, #f1f2ef);
+  --surface-secondary: var(--color-token-text-secondary, #b4b6b2);
+  --surface-line: color-mix(
+    in srgb,
+    var(--color-token-foreground, #ffffff) 9%,
+    transparent
+  );
+  --surface-line-strong: color-mix(
+    in srgb,
+    var(--color-token-foreground, #ffffff) 13%,
+    transparent
+  );
+  --surface-shadow-panel: rgb(0 0 0 / 23%);
+  --surface-shadow-composer: rgb(0 0 0 / 20%);
+  --surface-shadow-response: rgb(0 0 0 / 18%);
+  --surface-shadow-dialog: rgb(0 0 0 / 38%);
+  --surface-topbar-line: color-mix(
+    in srgb,
+    var(--color-token-foreground, #ffffff) 7%,
+    transparent
+  );
+  --surface-composer-ring-opacity: 1;
+  --surface-composer-ring-mask-mid: 0.5;
+  --surface-composer-ring-mask-bottom: 0.06;
+  --surface-composer-ring-track: rgb(255 255 255 / 12%);
+  --surface-composer-ring-cyan: rgb(0 229 255);
+  --surface-composer-ring-magenta: rgb(240 0 255);
+}
+
+:root[data-codex-surface-layout="surface"],
+:root[data-codex-surface-layout="surface"] body {
+  background: var(--surface-base) !important;
+}
+
+:root[data-codex-surface-layout="surface"] #root {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  header[data-app-shell-application-menu-bar="true"],
+:root[data-codex-surface-layout="surface"]
+  [class*="_ApplicationMenuTopBar_"] {
+  border-bottom-color: var(--surface-topbar-line) !important;
+  background: var(--surface-base) !important;
+  backdrop-filter: none !important;
+}
+
+/* The canvas stays visible around and between independent app surfaces. */
+:root[data-codex-surface-layout="surface"] .app-shell-left-panel {
+  box-sizing: border-box !important;
+  margin: var(--surface-gap) 0 var(--surface-gap) var(--surface-gap) !important;
+  border: 1px solid var(--surface-line) !important;
+  border-radius: var(--surface-radius) !important;
+  background: var(--surface-sidebar) !important;
+  box-shadow: 0 8px 22px var(--surface-shadow-panel) !important;
+  overflow: hidden !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-app-shell-main-surface] {
+  box-sizing: border-box !important;
+  margin: var(--surface-gap) !important;
+  border: 1px solid var(--surface-line) !important;
+  border-radius: var(--surface-radius) !important;
+  background: var(--surface-main) !important;
+  box-shadow: 0 8px 22px var(--surface-shadow-panel) !important;
+  backdrop-filter: none !important;
+  overflow: hidden !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-app-shell-main-surface] > header {
+  position: absolute !important;
+  inset: 0 0 auto !important;
+  margin: 0 !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-app-shell-focus-area="right-panel"] {
+  box-sizing: border-box !important;
+  margin: var(--surface-gap) var(--surface-gap) var(--surface-gap) 0 !important;
+  border: 1px solid var(--surface-line) !important;
+  border-radius: var(--surface-radius) !important;
+  background: var(--surface-main) !important;
+  box-shadow: 0 8px 22px var(--surface-shadow-panel) !important;
+  backdrop-filter: none !important;
+  overflow: hidden !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  .bg-token-side-bar-background {
+  background-color: var(--surface-sidebar) !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-app-shell-main-surface]
+  :is(.bg-token-main-surface-primary, .bg-token-bg-primary) {
+  background-color: transparent !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-composer-utility-bar-variant="home"] > div {
+  border-color: var(--surface-line-strong) !important;
+  background: var(--surface-composer) !important;
+  box-shadow: 0 8px 22px var(--surface-shadow-composer) !important;
+  backdrop-filter: none !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-composer-surface-variant] {
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 1 !important;
+  border: 0 !important;
+  border-radius: var(--surface-composer-radius) !important;
+  background: var(--surface-composer) !important;
+  box-shadow: 0 10px 26px var(--surface-shadow-composer) !important;
+  backdrop-filter: none !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  :has(> [data-composer-surface-variant]) {
+  position: relative !important;
+  isolation: isolate !important;
+  border-radius: calc(var(--surface-composer-radius) + 1px) !important;
+  overflow: hidden !important;
+}
+
+/* A one-pixel masked track overlays the Composer edge. Only a short cyan to
+ * magenta segment is colored; the rest remains a quiet neutral hairline. The
+ * host clips the runner exactly to the compact continuous-radius outline. */
+:root[data-codex-surface-layout="surface"]
+  :has(> [data-composer-surface-variant])::before {
+  --surface-composer-ring-angle: 0deg;
+  content: "";
+  box-sizing: border-box;
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  padding: 1px;
+  border-radius: calc(var(--surface-composer-radius) + 1px);
+  pointer-events: none;
+  background:
+    conic-gradient(
+      from var(--surface-composer-ring-angle),
+      transparent 0deg 282deg,
+      var(--surface-composer-ring-magenta) 306deg,
+      var(--surface-composer-ring-cyan) 338deg,
+      transparent 360deg
+    ),
+    linear-gradient(
+      var(--surface-composer-ring-track),
+      var(--surface-composer-ring-track)
+    );
+  -webkit-mask:
+    linear-gradient(
+      to bottom,
+      #000 0%,
+      #000 18%,
+      rgb(0 0 0 / 84%) 40%,
+      rgb(0 0 0 / var(--surface-composer-ring-mask-mid)) 64%,
+      rgb(0 0 0 / var(--surface-composer-ring-mask-bottom)) 100%
+    ) border-box,
+    linear-gradient(#000 0 0) content-box;
+  -webkit-mask-composite: source-out;
+  mask:
+    linear-gradient(
+      to bottom,
+      #000 0%,
+      #000 18%,
+      rgb(0 0 0 / 84%) 40%,
+      rgb(0 0 0 / var(--surface-composer-ring-mask-mid)) 64%,
+      rgb(0 0 0 / var(--surface-composer-ring-mask-bottom)) 100%
+    ) border-box,
+    linear-gradient(#000 0 0) content-box;
+  mask-composite: subtract;
+  opacity: var(--surface-composer-ring-opacity);
+  filter: none;
+  transform: translateZ(0);
+  animation: surface-composer-ring-flow
+    var(--surface-composer-ring-duration) linear infinite;
+}
+
+/* Assistant prose is intentionally flat. The app canvas remains visible, while
+ * a one-pixel status track sits directly above the native prose rail. */
+:root[data-codex-surface-layout="surface"]
+  [data-content-search-unit-key]:has(
+    [data-markdown-text-style="assistant-message"]
+  ) {
+  box-sizing: border-box !important;
+  position: relative !important;
+  min-block-size: 0 !important;
+  padding: 16px 0 14px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* One pseudo-element is enough for every state. Completed replies keep only a
+ * neutral hairline; there is no avatar, response card, border, or shadow. */
+:root[data-codex-surface-layout="surface"]
+  [data-content-search-unit-key]:has(
+    [data-markdown-text-style="assistant-message"]
+  )::before {
+  content: "";
+  box-sizing: border-box;
+  position: absolute;
+  z-index: 1;
+  inset: 5px 0 auto;
+  inline-size: 100%;
+  block-size: 1px;
+  border-radius: 1px;
+  background: var(--surface-line);
+  opacity: 0.62;
+  pointer-events: none;
+}
+
+:root[data-codex-surface-layout="surface"]:has(
+    button[aria-label="停止"]:not([aria-label*="终端"]),
+    button[aria-label="Stop"]
+  )
+  [data-content-search-turn-key]:has(.loading-shimmer-pure-text):not(
+    :has([data-markdown-animated][data-markdown-text-style="assistant-message"])
+  )
+  > div:first-child {
+  position: relative;
+}
+
+:root[data-codex-surface-layout="surface"]:has(
+    button[aria-label="停止"]:not([aria-label*="终端"]),
+    button[aria-label="Stop"]
+  )
+  [data-content-search-turn-key]:has(.loading-shimmer-pure-text):not(
+    :has([data-markdown-animated][data-markdown-text-style="assistant-message"])
+  )
+  > div:first-child::before {
+  content: "";
+  display: var(--surface-assistant-thinking-beat-display);
+  position: absolute;
+  z-index: 2;
+  inset: auto auto -5px 0;
+  inline-size: var(--surface-assistant-thinking-beat-width);
+  block-size: var(--surface-assistant-thinking-beat-height);
+  background-image: var(
+    --surface-assistant-thinking-beat-paint,
+    var(--surface-assistant-thinking-beat-image)
+  );
+  background-position: var(--surface-assistant-thinking-beat-position, center);
+  background-repeat: no-repeat;
+  background-size: var(--surface-assistant-thinking-beat-size, 100% 100%);
+  -webkit-mask-image: var(--surface-assistant-thinking-beat-mask, none);
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-image: var(--surface-assistant-thinking-beat-mask, none);
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+  filter: var(--surface-assistant-thinking-beat-filter);
+  opacity: var(--surface-assistant-thinking-beat-opacity, 0);
+  transform: translateX(-100%) translateZ(0);
+  animation: var(--surface-assistant-thinking-beat-animation);
+  pointer-events: none;
+}
+
+/* Before the first response token exists, Codex already swaps the Composer's
+ * submit control for its native Stop button. Use that stable state directly in
+ * CSS: the active turn gets a temporary 736 px status rail immediately, with
+ * no polling or document-wide MutationObserver. Once response prose starts,
+ * the rule below takes over at exactly the prose's top edge. */
+:root[data-codex-surface-layout="surface"]:has(
+    button[aria-label="停止"]:not([aria-label*="终端"]),
+    button[aria-label="Stop"]
+  )
+  [data-content-search-turn-key]:has(.loading-shimmer-pure-text):not(
+    :has([data-markdown-animated][data-markdown-text-style="assistant-message"])
+  )
+  > div:first-child::after {
+  content: "";
+  box-sizing: border-box;
+  display: block;
+  flex: 0 0 auto;
+  inline-size: 100%;
+  block-size: var(--surface-assistant-thinking-rail-height, 2px);
+  margin-block-start: 4px;
+  border-radius: 2px;
+  background-image: var(--surface-assistant-thinking-line);
+  background-position: var(--surface-assistant-thinking-position);
+  background-repeat: no-repeat;
+  background-size: var(--surface-assistant-thinking-size);
+  -webkit-mask-image: var(--surface-assistant-thinking-rail-mask, none);
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-image: var(--surface-assistant-thinking-rail-mask, none);
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+  box-shadow: var(--surface-assistant-thinking-shadow);
+  opacity: 1;
+  filter: none;
+  transform: translateZ(0);
+  animation: var(--surface-assistant-thinking-animation);
+  pointer-events: none;
+}
+
+/* The temporary rail must disappear as soon as Assistant prose is present so
+ * the text-top rail below is the only visible indicator. */
+:root[data-codex-surface-layout="surface"]
+  [data-content-search-turn-key]:has(
+    [data-markdown-animated][data-markdown-text-style="assistant-message"]
+  )
+  > div:first-child::after {
+  content: none;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-content-search-turn-key]:has(
+    [data-markdown-animated][data-markdown-text-style="assistant-message"]
+  )
+  > div:first-child::before {
+  content: none;
+}
+
+/* The newest streaming response owns one top-aligned animation. Both the
+ * pre-text rail and this prose rail use the same mode variables, so the handoff
+ * is visually seamless. */
+:root[data-codex-surface-layout="surface"]
+  [data-content-search-turn-key]
+  div:has(
+    > [data-content-search-unit-key]
+      [data-markdown-animated][data-markdown-text-style="assistant-message"]
+  ):not(
+    :has(
+      ~ div > [data-content-search-unit-key]
+        [data-markdown-animated][data-markdown-text-style="assistant-message"]
+    )
+  )
+  > [data-content-search-unit-key]::before {
+  content: "";
+  inset: 4px 0 auto;
+  inline-size: 100%;
+  block-size: var(--surface-assistant-thinking-rail-height, 2px);
+  border-radius: 2px;
+  background-image: var(--surface-assistant-thinking-line);
+  background-position: var(--surface-assistant-thinking-position);
+  background-repeat: no-repeat;
+  background-size: var(--surface-assistant-thinking-size);
+  -webkit-mask-image: var(--surface-assistant-thinking-rail-mask, none);
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-image: var(--surface-assistant-thinking-rail-mask, none);
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+  box-shadow: var(--surface-assistant-thinking-shadow);
+  opacity: 1;
+  filter: none;
+  transform: translateZ(0);
+  animation: var(--surface-assistant-thinking-animation);
+}
+
+/* Electric current: a 24 px transparent vector slot carries a roughly 1 px
+ * white-hot core, violet ionized edge, and short branches. The slot remains
+ * eight pixels inside both prose boundaries; only the arc itself is painted. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="current"] {
+  --surface-assistant-thinking-rail-height: 2px;
+  --surface-assistant-thinking-rail-mask: none;
+  --surface-assistant-current-violet: #8b5cf6;
+  --surface-assistant-current-lilac: #c084fc;
+  --surface-assistant-thinking-line:
+    linear-gradient(#030810, #030810);
+  --surface-assistant-thinking-position: 0 0;
+  --surface-assistant-thinking-size: 100% 100%;
+  --surface-assistant-thinking-shadow: none;
+  --surface-assistant-thinking-animation:
+    surface-assistant-current-flow 2.4s linear infinite;
+  --surface-assistant-thinking-beat-display: block;
+  --surface-assistant-thinking-beat-animation:
+    surface-assistant-current-spark 2.4s ease-in-out infinite,
+    surface-assistant-current-flicker 0.2s steps(1, end) infinite,
+    surface-assistant-current-frames 0.48s steps(1, end) infinite;
+  --surface-assistant-thinking-beat-image: none;
+  --surface-assistant-thinking-beat-mask:
+    none;
+  --surface-assistant-thinking-beat-paint:
+    var(--surface-assistant-current-arc-image, none);
+  --surface-assistant-thinking-beat-position: 0% 50%;
+  --surface-assistant-thinking-beat-size: 400% 100%;
+  --surface-assistant-thinking-beat-filter: none;
+  --surface-assistant-thinking-beat-width: 180px;
+  --surface-assistant-thinking-beat-height: 24px;
+}
+
+/* ECG monitor: one needle-white head scans left-to-right at a calmer 2.2 s
+ * pace. Each pass carries a subtle double brightness pulse (lub-dub), while
+ * preserving the flat two-pixel line the user selected. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="ecg"] {
+  --surface-assistant-thinking-rail-height: 2px;
+  --surface-assistant-thinking-rail-mask:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(0 0 0 / 14%) 4%,
+      #000000 12%,
+      #000000 88%,
+      rgb(0 0 0 / 14%) 96%,
+      transparent 100%
+    );
+  --surface-assistant-thinking-line:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(23 213 82 / 3%) 10%,
+      rgb(28 218 87 / 8%) 28%,
+      rgb(35 224 96 / 17%) 52%,
+      rgb(44 232 106 / 34%) 72%,
+      rgb(58 241 119 / 68%) 88%,
+      #7cff9e 95%,
+      #ffffff 98.5% 100%
+    ),
+    linear-gradient(
+      rgb(45 220 99 / 15%),
+      rgb(45 220 99 / 15%)
+    );
+  --surface-assistant-thinking-position: -196px 0, 0 0;
+  --surface-assistant-thinking-size: 196px 100%, 100% 100%;
+  --surface-assistant-thinking-shadow:
+    0 0 4px rgb(52 232 108 / 34%),
+    0 0 8px rgb(52 232 108 / 13%);
+  --surface-assistant-thinking-animation:
+    surface-assistant-ecg-flow 2.2s linear infinite;
+  --surface-assistant-thinking-beat-display: block;
+  --surface-assistant-thinking-beat-animation:
+    surface-assistant-ecg-beat 2.2s linear infinite;
+  --surface-assistant-thinking-beat-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 14'%3E%3Cpath d='M0 7H8L11 6L13.5 8L17 0.8L21 13L24 7H40' fill='none' stroke='%237CFF9E' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='39' cy='7' r='1.2' fill='white'/%3E%3C/svg%3E");
+  --surface-assistant-thinking-beat-filter:
+    drop-shadow(0 0 3px rgb(52 232 108 / 68%));
+  --surface-assistant-thinking-beat-width: 40px;
+  --surface-assistant-thinking-beat-height: 14px;
+}
+
+/* Keep the same double-pulse on the prose rail after the pre-text handoff. */
+:root[data-codex-surface-layout="surface"]:is(
+    [data-codex-assistant-indicator="current"],
+    [data-codex-assistant-indicator="ecg"]
+  )
+  [data-content-search-turn-key]
+  div:has(
+    > [data-content-search-unit-key]
+      [data-markdown-animated][data-markdown-text-style="assistant-message"]
+  ):not(
+    :has(
+      ~ div > [data-content-search-unit-key]
+        [data-markdown-animated][data-markdown-text-style="assistant-message"]
+    )
+  )
+  > [data-content-search-unit-key]::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: -2px auto auto var(--codex-qa-electric-left, 0);
+  inline-size: var(--surface-assistant-thinking-beat-width, 34px);
+  block-size: var(--surface-assistant-thinking-beat-height, 12px);
+  background-image: var(
+    --surface-assistant-thinking-beat-paint,
+    var(--surface-assistant-thinking-beat-image)
+  );
+  background-position: var(--surface-assistant-thinking-beat-position, center);
+  background-repeat: no-repeat;
+  background-size: var(--surface-assistant-thinking-beat-size, 100% 100%);
+  -webkit-mask-image: var(--surface-assistant-thinking-beat-mask, none);
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-image: var(--surface-assistant-thinking-beat-mask, none);
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+  filter: var(--surface-assistant-thinking-beat-filter);
+  opacity: var(--surface-assistant-thinking-beat-opacity, 0);
+  transform: translateX(-100%) translateZ(0);
+  animation: var(--surface-assistant-thinking-beat-animation);
+  pointer-events: none;
+}
+
+/* Center the transparent vector slot on the 2 px rail. Its visible core is
+ * still about one pixel; ECG retains the shared waveform offset above. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="current"]
+  [data-content-search-turn-key]
+  div:has(
+    > [data-content-search-unit-key]
+      [data-markdown-animated][data-markdown-text-style="assistant-message"]
+  ):not(
+    :has(
+      ~ div > [data-content-search-unit-key]
+        [data-markdown-animated][data-markdown-text-style="assistant-message"]
+    )
+  )
+  > [data-content-search-unit-key]::after {
+  inset-block-start: -7px;
+}
+
+/* The larger ECG frame keeps its seven-pixel centerline aligned to the rail. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="ecg"]
+  [data-content-search-turn-key]
+  div:has(
+    > [data-content-search-unit-key]
+      [data-markdown-animated][data-markdown-text-style="assistant-message"]
+  ):not(
+    :has(
+      ~ div > [data-content-search-unit-key]
+        [data-markdown-animated][data-markdown-text-style="assistant-message"]
+    )
+  )
+  > [data-content-search-unit-key]::after {
+  inset-block-start: -3px;
+}
+
+/* The voltage variables are animated on the pseudo-element itself. Resolve
+ * their product here instead of through an inherited root variable; otherwise
+ * registered non-inheriting values can collapse the pre-token arc to zero. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="current"]:has(
+    button[aria-label="鍋滄"]:not([aria-label*="缁堢"]),
+    button[aria-label="Stop"]
+  )
+  [data-content-search-turn-key]:has(.loading-shimmer-pure-text):not(
+    :has([data-markdown-animated][data-markdown-text-style="assistant-message"])
+  )
+  > div:first-child::before,
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="current"]
+  [data-content-search-turn-key]
+  div:has(
+    > [data-content-search-unit-key]
+      [data-markdown-animated][data-markdown-text-style="assistant-message"]
+  ):not(
+    :has(
+      ~ div > [data-content-search-unit-key]
+        [data-markdown-animated][data-markdown-text-style="assistant-message"]
+    )
+  )
+  > [data-content-search-unit-key]::after {
+  opacity: calc(
+    var(--surface-assistant-current-envelope)
+    * var(--surface-assistant-current-flicker)
+  );
+}
+
+:root[data-codex-surface-layout="surface"] [data-user-message-bubble="true"] {
+  border-radius: var(--surface-user-bubble-radius) !important;
+}
+
+/* Codex intentionally lets Markdown media exceed the prose column through a
+ * fixed-width MediaWideBlock. Inside a bounded Response Surface that width
+ * would escape the card, so media uses the card's available content width. */
+:root[data-codex-surface-layout="surface"]
+  [data-content-search-unit-key]:has(
+    [data-markdown-text-style="assistant-message"]
+  ) [class*="_MediaWideBlock_"] {
+  box-sizing: border-box !important;
+  inline-size: 100% !important;
+  max-inline-size: 100% !important;
+  min-inline-size: 0 !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-content-search-unit-key]:has(
+    [data-markdown-text-style="assistant-message"]
+  ) [class*="_MediaWideBlock_"] :is(button, a, img, video, canvas) {
+  max-inline-size: 100% !important;
+}
+
+/* Native wide Markdown tables use negative inline margins to span the full
+ * conversation rail. Keep that behavior outside Response Surfaces, but inside
+ * a bounded response let the scroller occupy only the padded content width. */
+:root[data-codex-surface-layout="surface"]
+  [data-content-search-unit-key]:has(
+    [data-markdown-text-style="assistant-message"]
+  ) [data-markdown-table][data-wide-block] {
+  box-sizing: border-box !important;
+  inline-size: 100% !important;
+  max-inline-size: 100% !important;
+  margin-inline: 0 !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-content-search-unit-key]:has(
+    [data-markdown-text-style="assistant-message"]
+  ) [data-markdown-table][data-wide-block] > [class*="_TableScroller_"] {
+  inline-size: 100% !important;
+  max-inline-size: 100% !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-content-search-unit-key]:has(
+    [data-markdown-text-style="assistant-message"]
+  ) [data-markdown-table][data-wide-block] [class*="_TableWrapper_"] {
+  min-inline-size: 100% !important;
+  margin-inline: 0 !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-content-search-unit-key]:has(
+    [data-markdown-text-style="assistant-message"]
+  ) [data-markdown-table][data-wide-block] table {
+  inline-size: 100% !important;
+  min-inline-size: 100% !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  :is([role="dialog"], [role="menu"], [data-radix-popper-content-wrapper] > div) {
+  color: var(--surface-ink) !important;
+  border-color: var(--surface-line) !important;
+  background-color: var(--surface-dialog) !important;
+  box-shadow: 0 22px 60px var(--surface-shadow-dialog) !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  :is(pre, [data-code-block], [data-composer-code-block]) {
+  border-color: var(--surface-line) !important;
+  background-color: var(--surface-code) !important;
+}
+
+@media (max-width: 760px) {
+  [data-codex-surface-layout-control="true"] {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  [data-codex-surface-layout-options="true"] {
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  :root[data-codex-surface-layout="surface"] {
+    --surface-gap: 6px;
+    --surface-radius: 10px;
+  }
+}
+
+/* Per-project folder colors are intentionally independent from Surface. They
+ * survive Codex's native System / Light / Dark theme changes and color only
+ * the folder glyph, never the row label or selection background. */
+:root {
+  --codex-project-color-gray: #747474;
+  --codex-project-color-red: #c94f58;
+  --codex-project-color-orange: #c96d2d;
+  --codex-project-color-yellow: #ad8421;
+  --codex-project-color-green: #4e9559;
+  --codex-project-color-cyan: #358e9d;
+  --codex-project-color-blue: #4b70c9;
+  --codex-project-color-purple: #7f5ab8;
+  --codex-project-color-selection-ring: rgb(20 20 20 / 78%);
+}
+
+:root:is(.dark, .electron-dark) {
+  --codex-project-color-gray: #a3a3a3;
+  --codex-project-color-red: #ef6b73;
+  --codex-project-color-orange: #ed8b4a;
+  --codex-project-color-yellow: #d9af38;
+  --codex-project-color-green: #6ebf70;
+  --codex-project-color-cyan: #55b8c6;
+  --codex-project-color-blue: #6e97f0;
+  --codex-project-color-purple: #a984e3;
+  --codex-project-color-selection-ring: rgb(255 255 255 / 90%);
+}
+
+[data-codex-project-color="gray"] {
+  --codex-project-folder-color: var(--codex-project-color-gray);
+}
+
+[data-codex-project-color="red"] {
+  --codex-project-folder-color: var(--codex-project-color-red);
+}
+
+[data-codex-project-color="orange"] {
+  --codex-project-folder-color: var(--codex-project-color-orange);
+}
+
+[data-codex-project-color="yellow"] {
+  --codex-project-folder-color: var(--codex-project-color-yellow);
+}
+
+[data-codex-project-color="green"] {
+  --codex-project-folder-color: var(--codex-project-color-green);
+}
+
+[data-codex-project-color="cyan"] {
+  --codex-project-folder-color: var(--codex-project-color-cyan);
+}
+
+[data-codex-project-color="blue"] {
+  --codex-project-folder-color: var(--codex-project-color-blue);
+}
+
+[data-codex-project-color="purple"] {
+  --codex-project-folder-color: var(--codex-project-color-purple);
+}
+
+[data-app-action-sidebar-project-row][data-codex-project-color]
+  [data-sidebar-project-drop-zone="project-icon"],
+[data-app-action-sidebar-project-row][data-codex-project-color]
+  [data-sidebar-project-drop-zone="project-icon"] svg {
+  color: var(--codex-project-folder-color) !important;
+}
+
+/* Surface project library: collapsed projects become a compact two-column
+ * shelf. Expanded projects span both columns and keep Codex's native thread
+ * list, drag behavior, menus, and selection semantics intact. */
+:root[data-codex-surface-layout="surface"] [data-codex-project-grid="true"] {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  column-gap: 4px;
+  row-gap: 2px;
+}
+
+:root[data-codex-surface-layout="surface"] [data-codex-project-grid-item="true"] {
+  min-width: 0;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-grid-item="true"][data-codex-project-expanded="true"] {
+  grid-column: 1 / -1;
+}
+
+:root[data-codex-surface-layout="surface"] [data-codex-project-card="true"] {
+  --codex-project-folder-color: var(--codex-project-color-gray);
+  position: relative;
+  min-width: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"] [data-app-action-sidebar-project-row] {
+  border-radius: 6px !important;
+  background: transparent !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"][data-codex-project-expanded="false"]
+  [data-app-action-sidebar-project-row] {
+  height: 52px !important;
+  min-height: 52px;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"][data-codex-project-expanded="false"]
+  [data-app-action-sidebar-project-row] > div:first-child {
+  gap: 8px !important;
+  padding-inline-start: 8px !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"][data-codex-project-expanded="false"]
+  [data-sidebar-project-drop-zone="project-icon"] {
+  width: 30px !important;
+  height: 100% !important;
+  margin-inline: 0 !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"][data-codex-project-expanded="false"]
+  [data-sidebar-project-drop-zone="project-icon"] svg {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"][data-codex-project-expanded="false"]
+  [data-app-action-sidebar-project-row] > div:first-child [class*="whitespace-nowrap"] {
+  white-space: normal !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"][data-codex-project-expanded="false"]
+  [data-app-action-sidebar-project-row] .text-fade-truncate {
+  display: -webkit-box !important;
+  overflow: hidden !important;
+  padding-inline-end: 0 !important;
+  white-space: normal !important;
+  line-height: 18px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  mask-image: none !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"][data-codex-project-expanded="false"]
+  [data-app-action-sidebar-project-row]:hover {
+  background: color-mix(
+    in srgb,
+    var(--surface-ink) 5%,
+    transparent
+  ) !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"][data-codex-project-expanded="true"] {
+  background: transparent;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"][data-codex-project-expanded="true"]
+  [data-app-action-sidebar-project-row] {
+  height: 38px !important;
+  min-height: 38px;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"][data-codex-project-expanded="true"]
+  [data-sidebar-project-drop-zone="project-icon"] svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"][data-codex-project-expanded="true"] > .overflow-hidden {
+  padding: 3px 0 4px;
+  border-top: 1px solid var(--surface-line);
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-codex-project-card="true"] [data-app-action-sidebar-thread-row] {
+  height: 32px !important;
+  min-height: 32px;
+  border-radius: 6px !important;
+}
+
+[data-codex-thread-icon="true"] {
+  display: none;
+}
+
+:root[data-codex-surface-layout="surface"] [data-codex-thread-icon="true"] {
+  display: block;
+  width: 16px !important;
+  height: 16px !important;
+  color: var(--surface-secondary);
+  opacity: 0.8;
+}
+
+:root[data-codex-surface-layout="surface"]
+  [data-app-action-sidebar-thread-row][data-app-action-sidebar-thread-selected="true"]
+  [data-codex-thread-icon="true"] {
+  color: var(--codex-project-folder-color, var(--surface-ink));
+  opacity: 0.96;
+}
+
+[data-codex-project-color-popover="true"] {
+  position: fixed;
+  z-index: 2147483000;
+  box-sizing: border-box;
+  width: 224px;
+  padding: 12px;
+  border: 1px solid var(--color-token-border, rgb(127 127 127 / 22%)) !important;
+  border-radius: 11px;
+  color: var(--color-token-text-primary, #202121) !important;
+  background: var(--color-token-main-surface-primary, #ffffff) !important;
+  box-shadow:
+    0 14px 38px rgb(0 0 0 / 16%),
+    0 2px 8px rgb(0 0 0 / 8%) !important;
+  font-family: inherit;
+}
+
+:root:is(.dark, .electron-dark) [data-codex-project-color-popover="true"] {
+  color: var(--color-token-text-primary, #f0f0f0) !important;
+  background: var(--color-token-main-surface-primary, #252525) !important;
+  box-shadow:
+    0 16px 42px rgb(0 0 0 / 38%),
+    0 2px 8px rgb(0 0 0 / 24%) !important;
+}
+
+[data-codex-project-color-popover="true"][hidden] {
+  display: none !important;
+}
+
+[data-codex-project-color-title="true"] {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+[data-codex-project-color-name="true"] {
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--color-token-text-secondary, #737373);
+  font-size: 12px;
+  line-height: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-codex-project-color-grid="true"] {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  justify-items: center;
+  gap: 10px 12px;
+  margin-top: 12px;
+}
+
+[data-codex-project-color-swatch] {
+  position: relative;
+  box-sizing: border-box;
+  inline-size: 29px;
+  block-size: 29px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--codex-project-swatch);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 22%);
+  cursor: pointer;
+}
+
+[data-codex-project-color-swatch]:hover {
+  transform: scale(1.08);
+}
+
+[data-codex-project-color-swatch][data-selected] {
+  outline: 2px solid var(--codex-project-color-selection-ring);
+  outline-offset: 2px;
+}
+
+[data-codex-project-color-swatch]:focus-visible,
+[data-codex-project-color-reset="true"]:focus-visible {
+  outline: 2px solid var(--color-token-focus-border, currentColor);
+  outline-offset: 2px;
+}
+
+[data-codex-project-color-reset="true"] {
+  width: 100%;
+  min-height: 30px;
+  margin-top: 12px;
+  padding: 0 10px;
+  border: 1px solid var(--color-token-border, rgb(127 127 127 / 20%));
+  border-radius: 7px;
+  color: var(--color-token-text-secondary, currentColor);
+  background: var(--color-token-bg-secondary, transparent);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+[data-codex-project-color-reset="true"]:hover {
+  color: var(--color-token-text-primary, currentColor);
+  background: var(--color-token-list-hover-background, rgb(127 127 127 / 9%));
+}
+
+/* Compact live state and Composer context instrumentation stay independent
+ * from Surface layout. Official light/dark theme switching therefore keeps
+ * the information, while these tokens adapt contrast without recoloring the
+ * rest of Codex. */
+@keyframes codex-live-segment-breathe {
+  0%, 100% { opacity: 0.66; }
+  50% { opacity: 1; }
+}
+
+:root {
+  --codex-context-track: rgb(0 0 0 / 14%);
+  --codex-context-hover: rgb(0 0 0 / 5%);
+  --codex-context-accent: #7759c7;
+  --codex-context-accent-glow: rgb(119 89 199 / 30%);
+  --codex-live-panel: rgb(255 255 255 / 97%);
+  --codex-live-panel-border: rgb(0 0 0 / 12%);
+  --codex-live-border-blue: rgb(72 123 220 / 56%);
+  --codex-live-border-violet: rgb(132 89 214 / 56%);
+  --codex-live-text: rgb(25 25 27 / 88%);
+  --codex-live-muted: rgb(25 25 27 / 52%);
+  --codex-live-track: rgb(0 0 0 / 10%);
+  --codex-live-track-line: rgb(0 0 0 / 18%);
+  --codex-live-blue: #5b7ff2;
+  --codex-live-violet: #a66eea;
+  --codex-live-white-core: rgb(255 255 255 / 96%);
+  --codex-usage-accent: #7867db;
+  --codex-usage-accent-alt: #4f9fd2;
+  --codex-usage-ink: #f5f6f8;
+  --codex-usage-muted: rgb(236 238 244 / 54%);
+}
+
+:root:is(.dark, .electron-dark) {
+  --codex-context-track: rgb(255 255 255 / 16%);
+  --codex-context-hover: rgb(255 255 255 / 6%);
+  --codex-context-accent: #b59aff;
+  --codex-context-accent-glow: rgb(181 154 255 / 42%);
+  --codex-live-panel: rgb(24 24 26 / 96%);
+  --codex-live-panel-border: rgb(255 255 255 / 12%);
+  --codex-live-border-blue: rgb(76 143 255 / 64%);
+  --codex-live-border-violet: rgb(178 103 255 / 62%);
+  --codex-live-text: rgb(245 245 247 / 90%);
+  --codex-live-muted: rgb(235 235 240 / 57%);
+  --codex-live-track: rgb(255 255 255 / 8%);
+  --codex-live-track-line: rgb(255 255 255 / 24%);
+  --codex-live-blue: #668dff;
+  --codex-live-violet: #bd7cff;
+  --codex-live-white-core: #ffffff;
+  --codex-usage-accent: #a58cff;
+  --codex-usage-accent-alt: #72c9f0;
+}
+
+/* LIVE ACTIVITY accent presets recolor only the ornamental signal layer. The
+ * panel, copy and neutral track keep the active Codex light/dark palette. */
+:root[data-codex-live-activity-accent="blue"] {
+  --codex-live-border-violet: rgb(78 131 203 / 64%);
+  --codex-live-border-blue: rgb(117 172 234 / 62%);
+  --codex-live-blue: #4e83cb;
+  --codex-live-violet: #79aaf1;
+}
+
+:root[data-codex-live-activity-accent="cyan"] {
+  --codex-live-border-violet: rgb(43 168 193 / 62%);
+  --codex-live-border-blue: rgb(101 211 226 / 60%);
+  --codex-live-blue: #2ba8c1;
+  --codex-live-violet: #65d3e2;
+}
+
+:root[data-codex-live-activity-accent="green"] {
+  --codex-live-border-violet: rgb(69 151 91 / 62%);
+  --codex-live-border-blue: rgb(119 204 133 / 58%);
+  --codex-live-blue: #45975b;
+  --codex-live-violet: #77cc85;
+}
+
+:root[data-codex-live-activity-accent="amber"] {
+  --codex-live-border-violet: rgb(191 124 34 / 62%);
+  --codex-live-border-blue: rgb(232 176 69 / 60%);
+  --codex-live-blue: #bf7c22;
+  --codex-live-violet: #e8b045;
+}
+
+:root[data-codex-live-activity-accent="red"] {
+  --codex-live-border-violet: rgb(196 70 84 / 62%);
+  --codex-live-border-blue: rgb(235 112 101 / 58%);
+  --codex-live-blue: #c44654;
+  --codex-live-violet: #eb7065;
+}
+
+:root:is(.dark, .electron-dark)[data-codex-live-activity-accent="blue"] {
+  --codex-live-border-violet: rgb(92 158 255 / 70%);
+  --codex-live-border-blue: rgb(135 194 255 / 68%);
+  --codex-live-blue: #5c9eff;
+  --codex-live-violet: #87c2ff;
+}
+
+:root:is(.dark, .electron-dark)[data-codex-live-activity-accent="cyan"] {
+  --codex-live-border-violet: rgb(52 202 224 / 70%);
+  --codex-live-border-blue: rgb(123 235 238 / 68%);
+  --codex-live-blue: #34cae0;
+  --codex-live-violet: #7bebee;
+}
+
+:root:is(.dark, .electron-dark)[data-codex-live-activity-accent="green"] {
+  --codex-live-border-violet: rgb(87 202 111 / 70%);
+  --codex-live-border-blue: rgb(139 232 148 / 66%);
+  --codex-live-blue: #57ca6f;
+  --codex-live-violet: #8be894;
+}
+
+:root:is(.dark, .electron-dark)[data-codex-live-activity-accent="amber"] {
+  --codex-live-border-violet: rgb(230 157 49 / 72%);
+  --codex-live-border-blue: rgb(255 205 89 / 68%);
+  --codex-live-blue: #e69d31;
+  --codex-live-violet: #ffcd59;
+}
+
+:root:is(.dark, .electron-dark)[data-codex-live-activity-accent="red"] {
+  --codex-live-border-violet: rgb(239 81 96 / 72%);
+  --codex-live-border-blue: rgb(255 126 108 / 68%);
+  --codex-live-blue: #ef5160;
+  --codex-live-violet: #ff7e6c;
+}
+
+:root[data-codex-context-accent="blue"] {
+  --codex-context-accent: #4e83cb;
+  --codex-context-accent-glow: rgb(78 131 203 / 30%);
+}
+
+:root[data-codex-context-accent="green"] {
+  --codex-context-accent: #3f9568;
+  --codex-context-accent-glow: rgb(63 149 104 / 30%);
+}
+
+:root[data-codex-context-accent="amber"] {
+  --codex-context-accent: #ad7b27;
+  --codex-context-accent-glow: rgb(173 123 39 / 30%);
+}
+
+:root[data-codex-context-accent="graphite"] {
+  --codex-context-accent: #696969;
+  --codex-context-accent-glow: rgb(105 105 105 / 24%);
+}
+
+:root:is(.dark, .electron-dark)[data-codex-context-accent="blue"] {
+  --codex-context-accent: #78adf5;
+  --codex-context-accent-glow: rgb(120 173 245 / 40%);
+}
+
+:root:is(.dark, .electron-dark)[data-codex-context-accent="green"] {
+  --codex-context-accent: #72d49c;
+  --codex-context-accent-glow: rgb(114 212 156 / 38%);
+}
+
+:root:is(.dark, .electron-dark)[data-codex-context-accent="amber"] {
+  --codex-context-accent: #e5bb68;
+  --codex-context-accent-glow: rgb(229 187 104 / 38%);
+}
+
+:root:is(.dark, .electron-dark)[data-codex-context-accent="graphite"] {
+  --codex-context-accent: #b0b0b0;
+  --codex-context-accent-glow: rgb(176 176 176 / 28%);
+}
+
+[data-codex-context-widget="true"] {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 18px;
+  height: 24px;
+  flex: 0 0 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 140ms ease, transform 140ms ease;
+}
+
+[data-codex-context-widget="true"]:hover {
+  background: var(--codex-context-hover);
+}
+
+[data-codex-context-widget="true"]:focus-visible {
+  outline: 1px solid var(--color-token-focus-border, var(--codex-context-accent));
+  outline-offset: 1px;
+}
+
+[data-codex-context-widget="true"] > [role="img"] {
+  pointer-events: none;
+}
+
+[data-codex-context-widget="true"] svg {
+  width: 14px !important;
+  height: 14px !important;
+  overflow: visible;
+}
+
+[data-codex-context-widget="true"] svg circle {
+  fill: none !important;
+  vector-effect: non-scaling-stroke;
+}
+
+[data-codex-context-widget="true"] svg circle:first-child {
+  stroke: var(--codex-context-track) !important;
+  stroke-width: 1.45px !important;
+}
+
+[data-codex-context-widget="true"] svg circle:last-child {
+  stroke: var(--codex-context-accent) !important;
+  stroke-width: 1.8px !important;
+  filter:
+    drop-shadow(0 0 0.35px rgb(255 255 255 / 74%))
+    drop-shadow(0 0 1.8px var(--codex-context-accent-glow));
+  transition: stroke 160ms ease, filter 160ms ease;
+}
+
+/* Native quota telemetry is rendered as a tiny black hardware module rather
+ * than a frosted or gray card. It is static, event-driven and deliberately
+ * omits the exact percentage in the default status mode. */
+[data-codex-usage-gauge="true"] {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  inline-size: 34px;
+  block-size: 22px;
+  margin-inline: 3px 1px;
+  padding: 0 5px;
+  border: 0;
+  border-radius: 5px;
+  color: var(--codex-usage-ink);
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+[data-codex-usage-gauge="true"]::before {
+  content: none;
+}
+
+[data-codex-usage-gauge="true"]:hover {
+  background: var(--color-token-list-hover-background, rgb(127 127 127 / 8%));
+}
+
+[data-codex-usage-gauge="true"]:focus-visible {
+  outline: 1px solid var(--codex-usage-accent-alt);
+  outline-offset: 1px;
+}
+
+[data-codex-usage-gauge-cells="true"] {
+  display: grid;
+  grid-template-columns: repeat(5, 3px);
+  align-items: end;
+  gap: 2px;
+  block-size: 9px;
+}
+
+[data-codex-usage-gauge-cell] {
+  display: block;
+  inline-size: 3px;
+  block-size: 7px;
+  border: 0;
+  border-radius: 1px;
+  background: color-mix(
+    in srgb,
+    var(--color-token-text-primary, currentColor) 14%,
+    transparent
+  );
+}
+
+[data-codex-usage-gauge-cell][data-active] {
+  background: var(--codex-usage-accent);
+}
+
+[data-codex-usage-gauge="true"][data-usage-level="caution"] {
+  --codex-usage-accent: #e2a23c;
+  --codex-usage-accent-alt: #f0c35d;
+}
+
+[data-codex-usage-gauge="true"][data-usage-level="critical"] {
+  --codex-usage-accent: #e34f67;
+  --codex-usage-accent-alt: #ff7b69;
+}
+
+[data-codex-usage-gauge="true"][data-usage-level="unavailable"] {
+  --codex-usage-accent: #60646e;
+  --codex-usage-accent-alt: #7d828d;
+  opacity: 0.72;
+}
+
+[data-codex-usage-gauge-value="true"] {
+  display: none;
+  min-inline-size: 18px;
+  font-family: var(--font-mono-default, "Geist Mono", "SFMono-Regular", Consolas, monospace);
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-align: center;
+}
+
+[data-codex-usage-gauge="true"][data-mode="precise"] {
+  inline-size: 48px;
+  justify-content: flex-start;
+  gap: 5px;
+  padding-inline: 5px 4px;
+}
+
+[data-codex-usage-gauge="true"][data-mode="precise"] [data-codex-usage-gauge-cells="true"] {
+  grid-template-columns: repeat(3, 2px);
+  gap: 1px;
+}
+
+[data-codex-usage-gauge="true"][data-mode="precise"] [data-codex-usage-gauge-cell] {
+  inline-size: 2px;
+}
+
+[data-codex-usage-gauge="true"][data-mode="precise"] [data-codex-usage-gauge-cell]:nth-child(n + 4) {
+  display: none;
+}
+
+[data-codex-usage-gauge="true"][data-mode="precise"] [data-codex-usage-gauge-value="true"] {
+  display: block;
+}
+
+[data-codex-usage-gauge-popover="true"] {
+  --codex-usage-popover-accent: var(--codex-usage-accent);
+  --codex-usage-popover-accent-alt: var(--codex-usage-accent-alt);
+  position: fixed;
+  z-index: 2147483000;
+  box-sizing: border-box;
+  inline-size: 258px;
+  padding: 14px 14px 12px;
+  overflow: hidden;
+  border: 1px solid #2c2f36;
+  border-radius: 9px;
+  color: var(--codex-usage-ink);
+  background: #07080a;
+  box-shadow: 0 14px 34px rgb(0 0 0 / 36%);
+  font-family: var(--font-mono-default, "Geist Mono", "SFMono-Regular", Consolas, monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-codex-usage-gauge-popover="true"][hidden] {
+  display: none !important;
+}
+
+[data-codex-usage-gauge-popover="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 14px;
+  block-size: 1px;
+  background: linear-gradient(90deg, transparent, var(--codex-usage-popover-accent-alt), #ffffff, var(--codex-usage-popover-accent), transparent);
+}
+
+[data-codex-usage-gauge-popover="true"][data-usage-level="caution"] {
+  --codex-usage-popover-accent: #e2a23c;
+  --codex-usage-popover-accent-alt: #f0c35d;
+}
+
+[data-codex-usage-gauge-popover="true"][data-usage-level="critical"] {
+  --codex-usage-popover-accent: #e34f67;
+  --codex-usage-popover-accent-alt: #ff7b69;
+}
+
+[data-codex-usage-gauge-popover="true"][data-usage-level="unavailable"] {
+  --codex-usage-popover-accent: #656a75;
+  --codex-usage-popover-accent-alt: #858b97;
+}
+
+[data-codex-usage-popover-header="true"],
+[data-codex-usage-popover-summary="true"],
+[data-codex-usage-popover-row="true"] {
+  display: flex;
+  align-items: center;
+}
+
+[data-codex-usage-popover-header="true"] {
+  justify-content: space-between;
+  color: rgb(243 244 248 / 78%);
+  font-size: 9.5px;
+  letter-spacing: 0.085em;
+}
+
+[data-codex-usage-popover-sync="true"] {
+  position: relative;
+  padding-inline-start: 10px;
+  color: var(--codex-usage-popover-accent-alt);
+}
+
+[data-codex-usage-popover-sync="true"]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 50%;
+  inline-size: 4px;
+  block-size: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translateY(-50%);
+}
+
+[data-codex-usage-popover-summary="true"] {
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+[data-codex-usage-popover-number="true"] {
+  color: #ffffff;
+  font-size: 30px;
+  font-weight: 520;
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
+[data-codex-usage-popover-unit="true"] {
+  color: var(--codex-usage-muted);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+[data-codex-usage-popover-strip="true"] {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 3px;
+  margin-top: 10px;
+}
+
+[data-codex-usage-popover-segment] {
+  display: block;
+  block-size: 3px;
+  border: 1px solid rgb(255 255 255 / 13%);
+  border-radius: 1px;
+  background: transparent;
+}
+
+[data-codex-usage-popover-segment][data-active] {
+  border-color: color-mix(in srgb, var(--codex-usage-popover-accent) 72%, #ffffff);
+  background: linear-gradient(90deg, var(--codex-usage-popover-accent-alt), var(--codex-usage-popover-accent));
+}
+
+[data-codex-usage-popover-rows="true"] {
+  margin-top: 13px;
+  border-top: 1px solid rgb(255 255 255 / 10%);
+}
+
+[data-codex-usage-popover-row="true"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  min-block-size: 31px;
+  border-bottom: 1px solid rgb(255 255 255 / 7%);
+  font-size: 10px;
+}
+
+[data-codex-usage-popover-window="true"] {
+  color: rgb(247 248 251 / 82%);
+}
+
+[data-codex-usage-popover-remaining="true"] {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+[data-codex-usage-popover-reset="true"] {
+  color: var(--codex-usage-muted);
+  font-size: 9px;
+  letter-spacing: 0.025em;
+}
+
+[data-codex-usage-popover-empty="true"] {
+  padding-block: 12px;
+  color: var(--codex-usage-muted);
+  font-size: 10px;
+}
+
+[data-codex-usage-popover-source="true"] {
+  margin-top: 10px;
+  color: rgb(235 237 243 / 32%);
+  font-size: 8px;
+  letter-spacing: 0.075em;
+}
+
+[data-codex-live-activity="true"] {
+  position: absolute;
+  z-index: 8;
+  inset-inline: 12px;
+  inset-block-end: 58px;
+  box-sizing: border-box;
+  padding: 12px 14px 13px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--codex-live-text);
+  background:
+    linear-gradient(var(--codex-live-panel), var(--codex-live-panel)) padding-box,
+    linear-gradient(112deg, var(--codex-live-border-violet), var(--codex-live-panel-border) 44%, var(--codex-live-border-blue)) border-box;
+  font-family: var(--font-mono-default, "Geist Mono", "SFMono-Regular", Consolas, monospace);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+  box-shadow: none;
+}
+
+:root[data-codex-live-activity-enabled="false"] [data-codex-live-activity="true"] {
+  display: none !important;
+}
+
+[data-codex-live-activity="true"][data-compact] {
+  display: none !important;
+}
+
+[data-codex-live-header="true"],
+[data-codex-live-progress-meta="true"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+[data-codex-live-title="true"] {
+  color: var(--codex-live-text);
+  font-size: 11px;
+  letter-spacing: 0.055em;
+}
+
+[data-codex-live-state-label="true"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--codex-live-muted);
+  letter-spacing: 0.04em;
+}
+
+[data-codex-live-state-label="true"] > i {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--codex-live-violet);
+  box-shadow: 0 0 5px color-mix(in srgb, var(--codex-live-violet) 72%, transparent);
+}
+
+[data-live-state="idle"] [data-codex-live-state-label="true"] > i {
+  background: var(--codex-live-muted);
+  box-shadow: none;
+  opacity: 0.46;
+}
+
+[data-codex-live-body="true"] {
+  margin-top: 10px;
+}
+
+[data-live-state="idle"] [data-codex-live-body="true"],
+[data-codex-live-activity="true"][data-condensed] [data-codex-live-body="true"] {
+  display: none;
+}
+
+[data-live-state="idle"],
+[data-codex-live-activity="true"][data-condensed] {
+  padding-block: 9px;
+}
+
+[data-codex-live-progress-meta="true"] {
+  color: var(--codex-live-muted);
+  font-size: 9.5px;
+  letter-spacing: 0.035em;
+}
+
+[data-codex-live-progress="true"] {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 6px;
+}
+
+[data-codex-live-progress-segment] {
+  position: relative;
+  display: block;
+  height: 4px;
+  overflow: hidden;
+  border: 1px solid var(--codex-live-track-line);
+  border-radius: 999px;
+  background: var(--codex-live-track);
+}
+
+[data-codex-live-progress-segment]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 0;
+  border-radius: inherit;
+}
+
+[data-codex-live-progress-segment][data-state="done"]::before {
+  width: 100%;
+  background: linear-gradient(90deg, var(--codex-live-blue), var(--codex-live-violet));
+}
+
+[data-codex-live-progress-segment][data-state="running"]::before {
+  width: 70%;
+  background: linear-gradient(
+    90deg,
+    var(--codex-live-violet) 0%,
+    color-mix(in srgb, var(--codex-live-violet) 64%, var(--codex-live-white-core)) 67%,
+    var(--codex-live-white-core) 74%,
+    transparent 100%
+  );
+  box-shadow: 0 0 5px color-mix(in srgb, var(--codex-live-violet) 56%, transparent);
+  animation: codex-live-segment-breathe 1.35s ease-in-out infinite;
+}
+
+[data-codex-live-rows="true"] {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+[data-codex-live-row] {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  align-items: center;
+  min-width: 0;
+}
+
+[data-codex-live-row-label="true"] {
+  color: var(--codex-live-muted);
+  font-size: 9.5px;
+  letter-spacing: 0.035em;
+}
+
+[data-codex-live-row-value="true"] {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--codex-live-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-codex-live-row="tool"] [data-codex-live-row-value="true"],
+[data-codex-live-row="agents"] [data-codex-live-row-value="true"] {
+  position: relative;
+  padding-inline-start: 13px;
+}
+
+[data-codex-live-row="agents"] [data-codex-live-row-value="true"] {
+  padding-inline-start: 19px;
+}
+
+[data-codex-live-row="tool"] [data-codex-live-row-value="true"]::before,
+[data-codex-live-row="agents"] [data-codex-live-row-value="true"]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 1px;
+  inset-block-start: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--codex-live-blue);
+  box-shadow: 0 0 4px color-mix(in srgb, var(--codex-live-blue) 60%, transparent);
+  transform: translateY(-50%);
+}
+
+[data-codex-live-row="agents"] [data-codex-live-row-value="true"]::before {
+  background: var(--codex-live-violet);
+  box-shadow:
+    7px 0 0 var(--codex-live-blue),
+    0 0 4px color-mix(in srgb, var(--codex-live-violet) 55%, transparent);
+}
+
+[data-codex-context-accent-popover="true"] {
+  position: fixed;
+  z-index: 2147483000;
+  box-sizing: border-box;
+  width: 172px;
+  padding: 10px;
+  border: 1px solid var(--color-token-border, rgb(127 127 127 / 20%));
+  border-radius: 10px;
+  color: var(--color-token-text-primary, #202121);
+  background: var(--color-token-main-surface-primary, #ffffff);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 16%);
+  font-family: inherit;
+}
+
+:root:is(.dark, .electron-dark) [data-codex-context-accent-popover="true"] {
+  color: var(--color-token-text-primary, #f0f0f0);
+  background: var(--color-token-main-surface-primary, #242424);
+  box-shadow: 0 14px 36px rgb(0 0 0 / 36%);
+}
+
+[data-codex-context-accent-popover="true"][hidden] {
+  display: none !important;
+}
+
+[data-codex-context-accent-title="true"] {
+  color: var(--color-token-text-secondary, currentColor);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+[data-codex-context-accent-grid="true"] {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  justify-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+[data-codex-context-accent-swatch] {
+  --codex-context-swatch: #7759c7;
+  box-sizing: border-box;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--codex-context-swatch);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 22%);
+  cursor: pointer;
+}
+
+[data-codex-context-accent-swatch="blue"] { --codex-context-swatch: #5d91d8; }
+[data-codex-context-accent-swatch="green"] { --codex-context-swatch: #55aa79; }
+[data-codex-context-accent-swatch="amber"] { --codex-context-swatch: #c9953b; }
+[data-codex-context-accent-swatch="graphite"] { --codex-context-swatch: #858585; }
+
+[data-codex-context-accent-swatch]:hover {
+  transform: scale(1.08);
+}
+
+[data-codex-context-accent-swatch][data-selected] {
+  outline: 1.5px solid var(--color-token-text-primary, currentColor);
+  outline-offset: 2px;
+}
+
+[data-codex-context-accent-swatch]:focus-visible {
+  outline: 2px solid var(--color-token-focus-border, currentColor);
+  outline-offset: 2px;
+}

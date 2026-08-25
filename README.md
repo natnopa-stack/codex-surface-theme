@@ -1,10 +1,48 @@
 # Codex Surface Theme
 
 > Unofficial community theme. This project is not affiliated with, endorsed by, or maintained by OpenAI.
+>
+> 非官方社区主题，与 OpenAI 无关，不由 OpenAI 发布、认可或维护。
 
-> 简体中文：[README.zh-CN.md](README.zh-CN.md)
+**English documentation:** this page · **简体中文完整文档：**[README.zh-CN.md](README.zh-CN.md)
 
-Codex Surface Theme is a local dark-mode visual theme package for the Windows Codex desktop app. It adds a restrained, flat Surface hierarchy and optional signal components through a one-shot Chrome DevTools Protocol (CDP) injection. It does not modify the official installation and does not keep an independent background process running.
+## 让 Codex 有一点生命感
+
+Codex Surface Theme 不只是给 Codex 换一套颜色，而是希望让这个每天陪你工作的工具真正有一点“生命感”。待机时，动态光条会放慢速度、降低亮度；当 Codex 开始思考、调用工具或运行 Agent 任务时，光效会加速并变得更活跃。即使不一直盯着文字输出，也能直观感受到它当前的工作状态。
+
+主题提供四种 Assistant 状态条：灵感来自 KITT 扫描灯的 **Rider**、适合暗色界面的紫白流光 **Current**、会随任务状态改变节奏的 **ECG** 心电图，以及带有放电感的 **VOX** 整流管电流。主输出区域和左上角的紧凑状态条可以分别开启或关闭。
+
+左下角加入了可折叠的 **LIVE ACTIVITY** 卡片。任务运行时，折叠状态会显示动态的 `RUNNING`；展开后可以查看当前模型、工具调用和 Agent 活动的简要信息。Composer 输入框增加了流动光带，项目文件夹的图标和颜色可以通过右键单独更换。设置页面提供动态组件开关和一键恢复原版界面的选项；用户名旁的额度仪表默认只显示电量格，点击后再查看精确百分比。
+
+整个主题以暗色模式为视觉基线，通过本机一次性注入运行，不修改 Codex 官方安装文件，也不会额外调用模型或消耗 Token。
+
+## Make Codex feel alive
+
+Codex Surface Theme is more than a new color palette. It is designed to make the tool you work with every day feel a little more alive. When Codex is idle, the animated light bars slow down and fade into the background. When it starts thinking, calling tools, or running Agent tasks, the animations become brighter and more active, so you can recognize its state without constantly watching the text output.
+
+The theme includes four Assistant signal styles: **Rider**, inspired by KITT’s scanning light; **Current**, a purple-and-white flow designed for the dark interface; **ECG**, a heartbeat display that reacts to task activity; and **VOX**, an electric rectifier-tube effect. The main-output signal and the compact top-left signal can be enabled independently.
+
+A collapsible **LIVE ACTIVITY** card sits in the lower-left corner. While a task is running, its collapsed state shows an animated `RUNNING` label; when expanded, it summarizes the current model, tool calls, and Agent activity. The Composer gains a flowing light accent, project folder icons and colors can be changed from the right-click menu, and the settings page provides individual component switches together with an option to restore the original Codex interface. A compact usage gauge beside the username shows battery-style bars by default and reveals the exact percentage when clicked.
+
+The theme is built around dark mode and runs through one-shot local injection. It does not modify the official Codex installation, make additional model requests, or consume extra model tokens.
+
+## 动态预览 / Animated previews
+
+以下 GIF 是使用公开样式重建的脱敏组件演示，不是真实用户窗口录像；项目名、任务名、状态值和账号信息均为模拟数据。
+
+The following GIFs are deterministic, sanitized component reconstructions rather than recordings of a real user window. Project names, task names, status values, and account details are simulated.
+
+### Assistant 状态、LIVE ACTIVITY 与额度仪表 / Assistant signals, LIVE ACTIVITY, and usage gauge
+
+![Four Assistant signal styles, independent switches, LIVE ACTIVITY, and the click-open usage gauge](docs/media/appearance-controls.gif)
+
+### 项目图标与颜色 / Project icon and color customization
+
+![Right-click project styling with eight colors and eight packaged project icons](docs/media/project-style-menu.gif)
+
+两张 GIF 位于 `docs/media/`，会直接显示在 GitHub 仓库首页，主题运行时不会加载它们。详细说明见 [docs/SHOWCASE.md](docs/SHOWCASE.md)。
+
+Both GIFs live in `docs/media/`, render directly on the GitHub repository page, and are not loaded by the theme runtime. See [docs/SHOWCASE.md](docs/SHOWCASE.md) for a component-by-component explanation.
 
 ## Status
 
@@ -31,16 +69,6 @@ Codex Surface Theme is a local dark-mode visual theme package for the Windows Co
 - Selecting `Official` removes all Surface components; selecting `Surface` restores them. The Surface visual layer is formally supported only in Codex Dark mode.
 
 See [docs/USAGE.md](docs/USAGE.md) for the complete control reference.
-
-## Animated previews
-
-These are deterministic, sanitized component reconstructions—not recordings of a real user window. All project names, task names, status values, and account details are simulated.
-
-![All four animated signal styles, independent switches, and the click-open usage gauge](docs/media/appearance-controls.gif)
-
-![Right-click project styling with eight colors and eight packaged project icons](docs/media/project-style-menu.gif)
-
-The GIFs live in `docs/media/`, render directly on the GitHub repository page, and are not loaded by the theme runtime. See [docs/SHOWCASE.md](docs/SHOWCASE.md) for a component-by-component explanation.
 
 ## Requirements
 

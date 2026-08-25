@@ -1,0 +1,39 @@
+name: Align v1.12.3 tag with cleaned source
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/align-v1.12.3-tag.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  align-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out complete repository history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove this one-time workflow and move the release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          rm -f .github/workflows/align-v1.12.3-tag.yml
+          rmdir .github/workflows 2>/dev/null || true
+          rmdir .github 2>/dev/null || true
+
+          git add -A
+          git commit -m "Align v1.12.3 tag with cleaned source"
+          git push origin HEAD:main
+
+          git tag -f v1.12.3 HEAD
+          git push --force origin refs/tags/v1.12.3

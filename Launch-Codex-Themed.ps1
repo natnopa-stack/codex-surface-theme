@@ -1,12 +1,5 @@
 [CmdletBinding()]
-param(
-    [switch]$AutoRecover,
-
-    [switch]$NonInteractive,
-
-    [ValidateRange(5, 60)]
-    [int]$GracefulCloseSeconds = 8
-)
+param()
 
 $ErrorActionPreference = "Stop"
 $packageRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -18,23 +11,6 @@ function Get-RunningCodexProcess {
         $_.ExecutablePath -like "*OpenAI.Codex_*" -and
         $_.CommandLine -notmatch "--type="
     })
-}
-
-function Wait-CodexExit {
-    param(
-        [Parameter(Mandatory)]
-        [int]$WaitSeconds
-    )
-
-    $deadline = (Get-Date).AddSeconds($WaitSeconds)
-    do {
-        if (@(Get-RunningCodexProcess).Count -eq 0) {
-            return $true
-        }
-        Start-Sleep -Milliseconds 250
-    } while ((Get-Date) -lt $deadline)
-
-    return $false
 }
 
 function Start-CodexPackageApplication {
@@ -110,57 +86,9 @@ if ($running.Count -gt 0) {
 
     Write-Warning "Codex is running without the local theme endpoint, usually after an app update or an official launch."
     Write-Output "THEME_RECOVERY_REQUIRED=1"
-    if ($NonInteractive) {
-        Write-Host "Fully exit Codex, then run LAUNCH-CODEX-THEMED.cmd again." -ForegroundColor Yellow
-        exit 2
-    }
-
-    if ($AutoRecover) {
-        Write-Host "Codex will restart automatically in 3 seconds to restore the theme." -ForegroundColor Cyan
-        Write-Host "Close this command window now to cancel and keep active tasks running." -ForegroundColor Yellow
-        Start-Sleep -Seconds 3
-    } else {
-        Write-Host "The recovery launcher can restart Codex and restore the theme." -ForegroundColor Cyan
-        Write-Host "Save or finish active work before continuing." -ForegroundColor Yellow
-        $restartAnswer = Read-Host "Restart Codex now? [y/N]"
-        if ($restartAnswer -notmatch "^(?i:y|yes)$") {
-            Write-Output "THEME_RECOVERY_CANCELLED=1"
-            exit 2
-        }
-    }
-
-    foreach ($candidate in $running) {
-        try {
-            $process = Get-Process -Id $candidate.ProcessId -ErrorAction Stop
-            $null = $process.CloseMainWindow()
-        } catch {
-            # The main process may have already exited while the prompt was open.
-        }
-    }
-
-    if (-not (Wait-CodexExit -WaitSeconds $GracefulCloseSeconds)) {
-        Write-Warning "Codex is still running, most likely in the system tray."
-        if (-not $AutoRecover) {
-            $forceAnswer = Read-Host "Force-close Codex and continue? Active tasks may be interrupted. [y/N]"
-            if ($forceAnswer -notmatch "^(?i:y|yes)$") {
-                Write-Host "Exit Codex from the tray, then run this launcher again." -ForegroundColor Yellow
-                Write-Output "THEME_RECOVERY_CANCELLED=1"
-                exit 2
-            }
-        } else {
-            Write-Host "Automatic recovery is force-closing the tray process now." -ForegroundColor Yellow
-        }
-
-        foreach ($candidate in @(Get-RunningCodexProcess)) {
-            Stop-Process -Id $candidate.ProcessId -Force -ErrorAction SilentlyContinue
-        }
-        if (-not (Wait-CodexExit -WaitSeconds 10)) {
-            throw "Codex did not exit, so the themed restart was cancelled."
-        }
-    }
-
-    Write-Output "THEME_RECOVERY_RESTARTING=1"
-    Start-Sleep -Milliseconds 500
+    Write-Host "The theme launcher did not close or restart Codex, so active tasks remain untouched." -ForegroundColor Yellow
+    Write-Host "Finish active work, fully exit Codex from the tray, then run LAUNCH-CODEX-THEMED.cmd again." -ForegroundColor Yellow
+    exit 2
 }
 
 $package = Get-AppxPackage -Name "OpenAI.Codex" -ErrorAction Stop |

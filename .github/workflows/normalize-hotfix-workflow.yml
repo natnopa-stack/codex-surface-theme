@@ -27,23 +27,27 @@ jobs:
 
           target = Path('.github/workflows/hotfix-v1.12.3-safe-launcher.yml')
           text = target.read_text(encoding='utf-8')
-          needle = '''      - name: Use Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-'''
-          replacement = '''      - name: Normalize checkout line endings
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config core.autocrlf false
-          git reset --hard HEAD
-
-      - name: Use Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-'''
+          needle = '\n'.join([
+              '      - name: Use Node.js 22',
+              '        uses: actions/setup-node@v4',
+              '        with:',
+              '          node-version: 22',
+              '',
+          ])
+          replacement = '\n'.join([
+              '      - name: Normalize checkout line endings',
+              '        shell: bash',
+              '        run: |',
+              '          set -euo pipefail',
+              '          git config core.autocrlf false',
+              '          git reset --hard HEAD',
+              '',
+              '      - name: Use Node.js 22',
+              '        uses: actions/setup-node@v4',
+              '        with:',
+              '          node-version: 22',
+              '',
+          ])
           if needle not in text:
               raise RuntimeError('Hotfix workflow insertion point was not found.')
           target.write_text(text.replace(needle, replacement, 1), encoding='utf-8', newline='\n')

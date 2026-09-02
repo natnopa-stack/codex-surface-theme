@@ -1,4 +1,6 @@
-# Codex Surface Theme（简体中文版）
+# 让你的 Codex 活起来
+
+**Codex Surface Theme** —— 一套受 KITT 启发、会随任务状态产生反馈的 Codex 暗色界面。
 
 > 本文件是简体中文（zh-CN）版说明；通用入口与最新状态见 [README.md](README.md)。
 

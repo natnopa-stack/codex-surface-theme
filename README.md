@@ -1,4 +1,6 @@
-# Codex Surface Theme
+# Make Your Codex Feel Alive
+
+**Codex Surface Theme** — A KITT-inspired dark interface with reactive signals, live activity, and project customization.
 
 > Unofficial community theme. This project is not affiliated with, endorsed by, or maintained by OpenAI.
 >

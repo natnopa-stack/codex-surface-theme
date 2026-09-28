@@ -25,6 +25,7 @@ function simulation(hz, active = true, stall = false) {
     drawPrismCanvas: () => {},
     unregisterVoxCanvas: () => {},
     voxMountedCanvases: new Set([canvas]),
+    voxWorkerCanvases: new Map(),
     voxVisibleCanvases: new Set([canvas]),
     voxPaintedCanvases: new WeakSet(),
     drawVoxCanvas: () => frames.push({ at: clock, phase: vm.runInContext("voxTime", context) }),

@@ -5,6 +5,7 @@ $ErrorActionPreference = "Stop"
 $packageRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $engineRoot = Join-Path $packageRoot "engine"
 $injectorPath = Join-Path $engineRoot "injector.mjs"
+$voxRendererPath = Join-Path $engineRoot "vox-renderer.mjs"
 $cssPath = Join-Path $engineRoot "skin.css"
 $tuningPath = Join-Path $engineRoot "tuning.css"
 $manifestPath = Join-Path $packageRoot "theme.json"
@@ -67,6 +68,7 @@ $required = @(
     $tuningPath,
     $configPath,
     $injectorPath,
+    $voxRendererPath,
     $arcPath,
     $voxPath
 ) + $tablerIconPaths + @(
@@ -133,6 +135,8 @@ try {
 
 $nodePath = (Get-Command node -ErrorAction SilentlyContinue).Source
 if ($nodePath) {
+    & $nodePath --check $voxRendererPath
+    Add-Check ($LASTEXITCODE -eq 0) "VOX worker JavaScript syntax"
     & $nodePath --check $injectorPath
     Add-Check ($LASTEXITCODE -eq 0) "injector JavaScript syntax"
     & $nodePath --check $independenceQaPath
@@ -151,6 +155,7 @@ if ($nodePath) {
 
 $css = if (Test-Path -LiteralPath $cssPath) { Get-Content -Raw -LiteralPath $cssPath } else { "" }
 $tuningCss = if (Test-Path -LiteralPath $tuningPath) { Get-Content -Raw -LiteralPath $tuningPath } else { "" }
+$voxRenderer = Get-Content -Raw -LiteralPath $voxRendererPath
 $injector = if (Test-Path -LiteralPath $injectorPath) { Get-Content -Raw -LiteralPath $injectorPath } else { "" }
 $adaptiveQa = if (Test-Path -LiteralPath $adaptiveQaPath) { Get-Content -Raw -LiteralPath $adaptiveQaPath } else { "" }
 $launchScript = if (Test-Path -LiteralPath $launchScriptPath) { Get-Content -Raw -LiteralPath $launchScriptPath } else { "" }
@@ -197,9 +202,9 @@ Add-Check (-not $injector.Contains('light-sheet.mjs')) "no experimental light ru
 Add-Check ($injector.Contains('const voxIdleFrameInterval = 1000 / 15')) "VOX idle frame-rate governor"
 Add-Check ($injector.Contains('voxPaintedCanvases')) "VOX observer repaint deduplication"
 Add-Check ($injector.Contains('window.devicePixelRatio')) "VOX DPR-aware canvas"
-Add-Check ($injector.Contains('? 0.9 + breath * 0.1')) "VOX active energy floor"
-Add-Check ($injector.Contains('distance * 1.18 - voxTime * 14')) "VOX smooth active transient"
-Add-Check ($injector.Contains('Repaint only a sub-pixel white-hot core')) "VOX crisp active core repaint"
+Add-Check ($voxRenderer.Contains('? 0.9 + noise(voxTime * 0.47, 5) * 0.1')) "VOX active energy floor"
+Add-Check ($voxRenderer.Contains('noise(distance * 0.14 + voxTime * 1.1, 17)')) "VOX smooth active transient"
+Add-Check ($voxRenderer.Contains('Repaint only a sub-pixel white-hot core')) "VOX crisp active core repaint"
 Add-Check ($tuningCss.Contains('--codex-online-core-width: 192px;')) "VOX extended Online Core width"
 Add-Check ($tuningCss.Contains(':has(> [data-composer-surface-variant])') -and $tuningCss.Contains('overflow: visible !important;')) "Composer native menu is not clipped"
 Add-Check ($tuningCss.Contains('[id^="terminal-panel-"]') -and $tuningCss.Contains('button[aria-current="location"]') -and $tuningCss.Contains('background: var(--color-token-main-surface-primary, #191919);')) "Terminal source-directory overlay remains opaque"

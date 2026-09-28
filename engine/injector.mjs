@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { paintVoxFrame, voxWorkerMain } from "./vox-renderer.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -277,6 +278,8 @@ function buildApplyExpression() {
   const legacyIds = ${JSON.stringify(legacyStyleIds)};
   const css = ${JSON.stringify(css)};
   const projectIconMarkup = ${JSON.stringify(projectIconMarkup)};
+  const paintVoxFrame = ${paintVoxFrame.toString()};
+  const voxWorkerSource = ${JSON.stringify("(" + voxWorkerMain.toString() + ")(" + paintVoxFrame.toString() + ");")};
   const forceSurface = ${JSON.stringify(activateSurface)};
   const defaultSelection = ${JSON.stringify(skinConfig.backgroundMode === "native" ? "official" : "surface")};
   const storageKey = "codex.surface-layout.v2";
@@ -748,6 +751,109 @@ function buildApplyExpression() {
   const voxActiveFrameInterval = 1000 / 30;
   const voxIdleFrameInterval = 1000 / 15;
 
+  let voxWorker = null;
+  let voxWorkerFailed = false;
+  let voxWorkerId = 0;
+  let voxWorkerState = "";
+  const voxWorkerCanvases = new Map();
+  const voxWorkerRequests = new Map();
+  const syncVoxWorker = () => {
+    if (!voxWorker) return;
+    const state = {
+      type: "state",
+      running: !document.hidden && isVoxSurfaceActive(),
+      active: root.getAttribute("data-codex-online-core-state") === "active",
+      light: root.matches('[data-theme="light"], .electron-light') &&
+        !root.matches('[data-theme="dark"], .electron-dark, .dark'),
+    };
+    const key = JSON.stringify(state);
+    if (key !== voxWorkerState) { voxWorkerState = key; voxWorker.postMessage(state); }
+    const running = state.running && [...voxWorkerCanvases.keys()].some(c => voxVisibleCanvases.has(c));
+    if (running) setNodeAttribute(root, "data-codex-vox-running", "true");
+    else root.removeAttribute("data-codex-vox-running");
+  };
+  const syncVoxWorkerCanvas = (canvas) => {
+    const entry = voxWorkerCanvases.get(canvas);
+    if (!entry || !voxWorker) return;
+    const size = voxCanvasMetrics.get(canvas) || { width: 0, height: 0 };
+    const values = {
+      width: size.width, height: size.height,
+      dpr: Math.min(2, Math.max(1, window.devicePixelRatio || 1)),
+      visible: voxVisibleCanvases.has(canvas),
+      location: canvas.parentElement?.getAttribute("data-codex-vox-location") || "",
+    };
+    const key = JSON.stringify(values);
+    if (key !== entry.key) { entry.key = key; voxWorker.postMessage({ type: "update", id: entry.id, values }); }
+  };
+  const terminateVoxWorker = () => {
+    voxWorker?.terminate(); voxWorker = null; voxWorkerState = "";
+    for (const request of voxWorkerRequests.values()) {
+      clearTimeout(request.timer); request.resolve({ mode: "stopped" });
+    }
+    voxWorkerRequests.clear();
+    root.removeAttribute("data-codex-vox-renderer");
+  };
+  const attachVoxWorker = (canvas) => {
+    if (voxWorkerFailed || typeof Worker !== "function" ||
+      typeof canvas.transferControlToOffscreen !== "function") return false;
+    try {
+      if (!voxWorker) {
+        const url = URL.createObjectURL(new Blob([voxWorkerSource], { type: "text/javascript" }));
+        try { voxWorker = new Worker(url); } finally { URL.revokeObjectURL(url); }
+        const worker = voxWorker;
+        worker.onmessage = ({ data }) => {
+          if (data.type !== "inspect") return;
+          const request = voxWorkerRequests.get(data.id);
+          if (request) { clearTimeout(request.timer); voxWorkerRequests.delete(data.id); request.resolve({ mode: "worker", ...data }); }
+        };
+        worker.onerror = (event) => {
+          if (worker !== voxWorker) return;
+          event.preventDefault(); voxWorkerFailed = true;
+          const oldCanvases = [...voxWorkerCanvases.keys()];
+          terminateVoxWorker(); voxWorkerCanvases.clear();
+          // A transferred canvas cannot become a main-thread canvas again.
+          // Replace only our own decorative nodes before the normal fallback.
+          for (const old of oldCanvases) {
+            unregisterVoxCanvas(old);
+            const replacement = old.cloneNode(false);
+            old.replaceWith(replacement); registerVoxCanvas(replacement);
+          }
+          setNodeAttribute(root, "data-codex-vox-renderer", "main");
+          refreshVoxOscilloscopes();
+        };
+      }
+      const offscreen = canvas.transferControlToOffscreen();
+      const rect = canvas.getBoundingClientRect();
+      voxCanvasMetrics.set(canvas, { width: rect.width, height: rect.height });
+      const entry = { id: ++voxWorkerId, key: "" };
+      voxWorkerCanvases.set(canvas, entry);
+      voxWorker.postMessage({ type: "add", id: entry.id, canvas: offscreen, values: {
+        width: rect.width, height: rect.height,
+        dpr: Math.min(2, Math.max(1, window.devicePixelRatio || 1)),
+        visible: voxVisibleCanvases.has(canvas),
+        location: canvas.parentElement?.getAttribute("data-codex-vox-location") || "",
+      } }, [offscreen]);
+      setNodeAttribute(root, "data-codex-vox-renderer", "worker");
+      syncVoxWorker();
+      return true;
+    } catch {
+      voxWorkerFailed = true;
+      if (!voxWorkerCanvases.size) terminateVoxWorker();
+      setNodeAttribute(root, "data-codex-vox-renderer", "main");
+      return false;
+    }
+  };
+  const getVoxRendererStatus = (reset = false) => {
+    if (!voxWorker) return Promise.resolve({ mode: "main", canvases: voxMountedCanvases.size });
+    return new Promise(resolve => {
+      const id = ++voxWorkerId;
+      const timer = setTimeout(() => { voxWorkerRequests.delete(id); resolve({ mode: "worker", unavailable: true }); }, 2500);
+      voxWorkerRequests.set(id, { resolve, timer });
+      voxWorker.postMessage({ type: "inspect", id, reset });
+    });
+  };
+
+
   const isVoxSurfaceActive = () =>
     root.getAttribute("data-codex-surface-layout") === activeValue &&
     root.getAttribute("data-codex-assistant-indicator") === "vox";
@@ -762,6 +868,7 @@ function buildApplyExpression() {
     for (const entry of entries) {
       const { width, height } = entry.contentRect;
       voxCanvasMetrics.set(entry.target, { width, height });
+      syncVoxWorkerCanvas(entry.target);
     }
   });
   const voxCanvasVisibilityObserver = new IntersectionObserver((entries) => {
@@ -770,6 +877,8 @@ function buildApplyExpression() {
         voxVisibleCanvases.add(entry.target);
         if (!document.hidden && isVoxSurfaceActive()) startVoxAnimation();
       } else voxVisibleCanvases.delete(entry.target);
+      syncVoxWorkerCanvas(entry.target);
+      syncVoxWorker();
     }
   });
   const registerVoxCanvas = (canvas) => {
@@ -778,9 +887,13 @@ function buildApplyExpression() {
     voxCanvasResizeObserver.observe(canvas);
     voxCanvasVisibilityObserver.observe(canvas);
     if (isVisibleVoxNode(canvas)) voxVisibleCanvases.add(canvas);
+    attachVoxWorker(canvas);
   };
   const unregisterVoxCanvas = (canvas) => {
     if (!canvas) return;
+    const workerEntry = voxWorkerCanvases.get(canvas);
+    if (workerEntry) voxWorker?.postMessage({ type: "remove", id: workerEntry.id });
+    voxWorkerCanvases.delete(canvas);
     voxMountedCanvases.delete(canvas);
     voxVisibleCanvases.delete(canvas);
     voxCanvasResizeObserver.unobserve(canvas);
@@ -849,6 +962,7 @@ function buildApplyExpression() {
     }
   };
   const drawVoxCanvas = (canvas) => {
+    if (voxWorkerCanvases.has(canvas)) return;
     let metrics = voxCanvasMetrics.get(canvas);
     if (!metrics || metrics.width <= 0 || metrics.height <= 0) {
       const rect = canvas.getBoundingClientRect();
@@ -867,85 +981,13 @@ function buildApplyExpression() {
 
     const context = canvas.getContext("2d", { alpha: true, desynchronized: true });
     if (!context) return;
-    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    context.clearRect(0, 0, width, height);
-
-    const centerY = height / 2;
-    const waveCenter = width / 2;
-    const activeSignal = root.getAttribute("data-codex-online-core-state") === "active";
-    const breath = (Math.sin(voxPulsePhase) + 1) / 2;
-    const signalEnergy = activeSignal
-      ? 0.9 + breath * 0.1
-      : 0.16 + breath * 0.08;
-    const signalOpacity = activeSignal ? 1 : 0.44;
-    const envelopeDenominator = Math.max(220, width * width * 0.0065);
-    const lightMode = root.matches('[data-theme="light"], .electron-light') &&
-      !root.matches('[data-theme="dark"], .electron-dark, .dark');
-    const baselineColor = lightMode
-      ? "rgba(91, 33, 182, 0.24)"
-      : "rgba(192, 132, 252, 0.2)";
-    const coreColor = lightMode ? "#5b21b6" : "#ffffff";
-    const glowColor = lightMode ? "#8b5cf6" : "#c084fc";
-    const voxLocation = canvas.parentElement?.getAttribute("data-codex-vox-location") || "";
-
-    // A dim physical zero line remains visible across the OLED. It is painted
-    // only in the always-on sidebar slot. In the main response surface that
-    // baseline reads as a second purple strip beneath the waveform.
-    if (voxLocation === "online") {
-      context.beginPath();
-      context.lineWidth = 0.8;
-      context.strokeStyle = baselineColor;
-      context.globalAlpha = activeSignal ? 1 : 0.34;
-      context.shadowBlur = 0;
-      context.moveTo(0, centerY);
-      context.lineTo(width, centerY);
-      context.stroke();
-    }
-
-    context.beginPath();
-    context.lineWidth = activeSignal ? 1.2 : 1.1;
-    context.strokeStyle = coreColor;
-    context.shadowColor = glowColor;
-    context.shadowBlur = activeSignal ? 4.5 : 1.8;
-    context.globalAlpha = signalOpacity;
-    let signalOpen = false;
-    for (let x = 0; x <= width; x += 1) {
-      const distance = x - waveCenter;
-      const envelope = Math.exp(-(distance * distance) / envelopeDenominator);
-      if (envelope <= 0.002) {
-        signalOpen = false;
-        continue;
-      }
-      const fundamental = Math.sin(distance * 0.32 - voxTime * 6) * (activeSignal ? 8 : 7.5);
-      const harmonic = Math.sin(distance * 0.78 + voxTime * 10) * (activeSignal ? 3.8 : 3.5);
-      // A low-amplitude smooth upper harmonic adds live electrical movement
-      // without turning the accepted plasma filament into a jagged polyline.
-      const transient = activeSignal
-        ? Math.sin(distance * 1.18 - voxTime * 14) * 0.85
-        : 0;
-      // Keep fine electrical grain continuous between frames, not random jumps.
-      const microJitter = Math.sin(distance * 2.17 + voxTime * 3.3) * 0.75;
-      const y = centerY +
-        (fundamental + harmonic + transient + microJitter) * envelope * signalEnergy;
-      if (!signalOpen) {
-        context.moveTo(x, y);
-        signalOpen = true;
-      } else {
-        context.lineTo(x, y);
-      }
-    }
-    context.stroke();
-    if (activeSignal) {
-      // Repaint only a sub-pixel white-hot core with no blur. This increases
-      // perceived brightness while preserving the crisp CRT/VOX material.
-      context.lineWidth = 0.8;
-      context.strokeStyle = coreColor;
-      context.shadowBlur = 0;
-      context.globalAlpha = 1;
-      context.stroke();
-    }
-    context.shadowBlur = 0;
-    context.globalAlpha = 1;
+    paintVoxFrame(context, width, height, pixelRatio, {
+      time: voxTime, pulse: voxPulsePhase,
+      active: root.getAttribute("data-codex-online-core-state") === "active",
+      light: root.matches('[data-theme="light"], .electron-light') &&
+        !root.matches('[data-theme="dark"], .electron-dark, .dark'),
+      location: canvas.parentElement?.getAttribute("data-codex-vox-location") || "",
+    });
   };
   const stopVoxAnimation = () => {
     if (voxAnimationFrame) cancelAnimationFrame(voxAnimationFrame);
@@ -953,6 +995,7 @@ function buildApplyExpression() {
     voxLastFrameTime = 0;
     voxNextFrameTime = 0;
     root.removeAttribute("data-codex-vox-running");
+    syncVoxWorker();
   };
   const renderVoxOscilloscopes = (frameTime = performance.now()) => {
     voxAnimationFrame = 0;
@@ -973,7 +1016,7 @@ function buildApplyExpression() {
           unregisterVoxCanvas(canvas);
           return false;
         }
-        return voxVisibleCanvases.has(canvas);
+        return voxVisibleCanvases.has(canvas) && !voxWorkerCanvases.has(canvas);
       }) : [];
     if (canvases.length === 0) {
       stopVoxAnimation();
@@ -999,6 +1042,8 @@ function buildApplyExpression() {
   const startVoxAnimation = () => {
     if (isVoxSurfaceActive()) setNodeAttribute(root, "data-codex-vox-running", "true");
     else root.removeAttribute("data-codex-vox-running");
+    syncVoxWorker();
+    if (voxWorker && [...voxMountedCanvases].every(c => voxWorkerCanvases.has(c))) return;
     if (voxAnimationFrame) return;
     voxAnimationFrame = requestAnimationFrame(renderVoxOscilloscopes);
   };
@@ -1047,6 +1092,8 @@ function buildApplyExpression() {
     voxCanvasVisibilityObserver.disconnect();
     voxMountedCanvases.clear();
     voxVisibleCanvases.clear();
+    terminateVoxWorker();
+    voxWorkerCanvases.clear();
   };
 
   const closeProjectColorPopover = () => {
@@ -1375,6 +1422,7 @@ function buildApplyExpression() {
       core?.getAttribute("data-online-state") !== nextState;
     setNodeAttribute(root, "data-codex-online-core-state", nextState);
     setNodeAttribute(core, "data-online-state", nextState);
+    syncVoxWorker();
     return { state: nextState, changed };
   };
   const nodeMatchesOrContains = (node, selector) => node instanceof Element &&
@@ -3286,6 +3334,7 @@ function buildApplyExpression() {
       const control = document.querySelector('[data-codex-online-core-control="true"]');
       if (control) syncOnlineCoreControl(control);
     },
+    getVoxRendererStatus,
     setOnlineCoreState(value = "auto") {
       return setOnlineCoreState(value);
     },

@@ -10,11 +10,11 @@ Codex Surface Theme 是面向 Windows 桌面版 Codex 的本地视觉主题包�
 
 ## 本次更新
 
-新版外观设置独立分区，额度移入导航栏，LIVE ACTIVITY 在目录底部独立占位；VOX 修复相位跳变和状态更新引发的项目重刷。深色支持输入框流光/星光独立开关与自定义色。详见 [1.15.8 发布说明](docs/RELEASE-NOTES-1.15.8.md)。
+新版外观设置独立分区，额度移入导航栏，LIVE ACTIVITY 在目录底部独立占位；VOX 使用页面内独立绘制线程，减少输出文字时的电流停顿；思考时平滑、不规律地起伏，待机保持原样。深色支持输入框流光/星光独立开关与自定义色。详见 [1.15.9 发布说明](docs/RELEASE-NOTES-1.15.9.md)。
 
 ## 状态
 
-- 当前版本：`1.15.8`（见 [theme.json](theme.json)）
+- 当前版本：`1.15.9`（见 [theme.json](theme.json)）
 - 包标识：`local.codex.surface-theme`
 - 注入方式：一次性 CDP 注入（`one-shot-cdp`）
 - 正式支持的 Surface 颜色模式：`深色`

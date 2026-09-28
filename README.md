@@ -48,11 +48,11 @@ Both GIFs live in `docs/media/`, render directly on the GitHub repository page, 
 
 ## Current update
 
-Version 1.15.8 adapts Appearance settings and the navigation rail, reserves a compact directory footer for LIVE ACTIVITY, and fixes VOX phase jumps and unnecessary project refreshes. Composer runner/particles have an independent switch and custom color. Surface follows resolved dark mode; light mode uses the native interface. See [release notes](docs/RELEASE-NOTES-1.15.8.md).
+Version 1.15.9 adapts Appearance settings and the navigation rail, reserves a compact directory footer for LIVE ACTIVITY, and keeps VOX drawing off the UI thread during streaming output. Thinking has smoothly irregular peaks; the accepted idle motion is preserved. Composer runner/particles have an independent switch and custom color. Surface follows resolved dark mode; light mode uses the native interface. See [release notes](docs/RELEASE-NOTES-1.15.9.md).
 
 ## Status
 
-- Theme version: `1.15.8` ([theme.json](theme.json))
+- Theme version: `1.15.9` ([theme.json](theme.json))
 - Package ID: `local.codex.surface-theme`
 - Injection mode: `one-shot-cdp`
 - Supported Surface color mode: Codex `Dark`

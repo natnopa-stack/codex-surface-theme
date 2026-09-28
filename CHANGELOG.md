@@ -2,7 +2,7 @@
 
 This changelog summarizes the complete capabilities of the current public version.
 
-## 1.15.8 — Dark theme
+## 1.15.9 — Dark theme
 
 ### Surface visual system
 
@@ -25,6 +25,8 @@ This changelog summarizes the complete capabilities of the current public versio
 ### Performance and stability
 
 - Excludes activity-card updates from project reconciliation, removes observer feedback loops, and avoids redundant DOM writes.
+- Uses a page-local Worker and OffscreenCanvas for VOX so streaming work on the UI thread does not stop waveform drawing; unsupported runtimes fall back to the existing canvas loop. Workers stop drawing when hidden and terminate on removal or reinjection.
+- Varies active VOX peak position, width, energy and fine structure with smooth noise while preserving the accepted idle geometry and motion.
 - Keeps VOX wave motion continuous at its frame cap, preserves frame deadlines across display refresh rates, and avoids phase jumps after delayed frames.
 - Filters high-frequency streaming mutations and deduplicates dynamic component refresh work.
 - Limits full status refreshes while retaining lightweight activity-state updates.

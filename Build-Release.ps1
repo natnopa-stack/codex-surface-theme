@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$PackageRoot = $PSScriptRoot,
-    [string]$ZipName = "codex-surface-theme-1.15.8-dark.zip",
+    [string]$ZipName = "codex-surface-theme-1.15.9-dark.zip",
     [switch]$SkipTest
 )
 

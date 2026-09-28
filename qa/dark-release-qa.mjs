@@ -1,5 +1,6 @@
 // Isolated synthetic-DOM regression. Never connects to a user's Codex window.
 import fs from "node:fs";
+import { paintVoxFrame, voxWorkerMain } from "../engine/vox-renderer.mjs";
 import path from "node:path";
 import os from "node:os";
 import vm from "node:vm";
@@ -18,7 +19,7 @@ let source = fs.readFileSync(path.join(root, "engine/injector.mjs"), "utf8").rep
   .replace("const here = path.dirname(fileURLToPath(import.meta.url));", "const here = " + JSON.stringify(path.join(root, "engine")) + ";");
 const cliStart = source.lastIndexOf('\ntry {\n  if (mode === "watch")');
 if (cliStart < 0) throw new Error("Cannot isolate injector expression without running its CLI.");
-const context = vm.createContext({ fs, path, Buffer, process: { argv: [] } });
+const context = vm.createContext({ fs, path, Buffer, paintVoxFrame, voxWorkerMain, process: { argv: [] } });
 vm.runInContext(source.slice(0, cliStart) + "\nglobalThis.expression = buildApplyExpression();", context);
 new vm.Script(context.expression);
 
@@ -70,7 +71,7 @@ try {
   const nativeModeWidth = await evaluate("document.querySelector('.native-mode').getBoundingClientRect().width");
   await evaluate(context.expression);
   await delay(800);
-  await evaluate(`window.c=globalThis.__codexSurfaceLayoutController;c.setSurfaceActive(true,false);c.setOnlineCoreEnabled(true,false);c.setOnlineCoreState('active');c.setUsageGaugeMode('precise',false);c.setComposerEffect('sparkles',false)`);
+  await evaluate(`window.c=globalThis.__codexSurfaceLayoutController;c.setSurfaceActive(true,false);c.setOnlineCoreEnabled(true,true);c.setOnlineCoreState('active');c.setUsageGaugeMode('precise',false);c.setComposerEffect('sparkles',false)`);
   await delay(300);
   const inspect = () => evaluate(`(() => {
     const q=s=>document.querySelector(s), r=n=>n.getBoundingClientRect().toJSON();
@@ -86,7 +87,31 @@ try {
   const narrow = await inspect();
   const picture = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true });
   fs.writeFileSync(path.join(output, "dark-settings.png"), Buffer.from(picture.data, "base64"));
-  const switches = await evaluate(`(() => { c.setAssistantIndicatorEnabled(false,false);c.setOnlineCoreEnabled(true,false);const independent=document.documentElement.getAttribute('data-codex-online-core-enabled')==='true';c.setComposerEffectEnabled(false,false);const off=!document.querySelector('[data-codex-composer-sparkles]');c.setComposerEffectEnabled(true,false);return {independent,off,on:Boolean(document.querySelector('[data-codex-composer-sparkles]'))};})()`);
+  const switches = await evaluate(`(() => { c.setAssistantIndicatorEnabled(false,false);c.setOnlineCoreEnabled(true,true);const independent=document.documentElement.getAttribute('data-codex-online-core-enabled')==='true';c.setComposerEffectEnabled(false,false);const off=!document.querySelector('[data-codex-composer-sparkles]');c.setComposerEffectEnabled(true,false);return {independent,off,on:Boolean(document.querySelector('[data-codex-composer-sparkles]'))};})()`);
+
+  // A real browser worker must keep painting while streaming blocks the UI.
+  await evaluate("window.workerTerminations=0;window.RealWorker=Worker;const terminate=Worker.prototype.terminate;Worker.prototype.terminate=function(){workerTerminations++;return terminate.call(this)};c.setAssistantIndicator('vox',true);c.setOnlineCoreState('active')");
+  await delay(350);
+  await evaluate("c.getVoxRendererStatus(true)");
+  const workerBlocked = await evaluate("(() => {const until=performance.now()+600;while(performance.now()<until){}return c.getVoxRendererStatus()})()");
+  await evaluate("c.setOnlineCoreState('idle')");
+  await delay(150);
+  await evaluate("c.getVoxRendererStatus(true)");
+  await delay(1100);
+  const workerIdle = await evaluate("c.getVoxRendererStatus()");
+  await evaluate("document.querySelector('[data-codex-vox-canvas]').style.display='none'");
+  await delay(150);
+  await evaluate("c.getVoxRendererStatus(true)");
+  await delay(180);
+  const workerHidden = await evaluate("c.getVoxRendererStatus()");
+  await evaluate("document.querySelector('[data-codex-vox-canvas]').style.display='';c.setOnlineCoreState('active')");
+  await delay(150);
+  const workerResumed = await evaluate("c.getVoxRendererStatus()");
+  await evaluate("c.setOnlineCoreEnabled(false,true)");
+  await delay(100);
+  const workerOff = await evaluate("c.getVoxRendererStatus()");
+  await evaluate("c.setOnlineCoreEnabled(true,true)");
+
   await evaluate("document.documentElement.setAttribute('data-theme','light')");
   await delay(150);
   const light = await evaluate(`({layout:document.documentElement.getAttribute('data-codex-surface-layout'),sparkles:!!document.querySelector('[data-codex-composer-sparkles]'),context:document.querySelector('#context').outerHTML,coreDisplay:getComputedStyle(document.querySelector('[data-codex-online-core]')).display,gaugeDisplay:getComputedStyle(document.querySelector('[data-codex-usage-gauge]')).display})`);
@@ -110,10 +135,19 @@ try {
   await send('Input.insertText', { text: 'fixture input' });
   const input = await evaluate("!document.querySelector('#native-menu').hidden&&window.profileClicks===1&&document.querySelector('textarea').value==='fixture input'");
   await evaluate("globalThis.__codexSurfaceLayoutController.destroy()");
+
+  const workerTerminated = await evaluate("workerTerminations===2");
+  // Unsupported Worker must retain the normal main-thread renderer.
+  await evaluate("window.Worker=undefined;localStorage.setItem('codex.assistant-indicator.v1','vox')");
+  await evaluate(context.expression);
+  await evaluate("globalThis.__codexSurfaceLayoutController.setAssistantIndicator('vox',false)");
+  await delay(200);
+  const fallback = await evaluate("globalThis.__codexSurfaceLayoutController.getVoxRendererStatus()");
+  await evaluate("globalThis.__codexSurfaceLayoutController.destroy();window.Worker=RealWorker");
   const removed = await evaluate("!document.querySelector('[data-codex-appearance-controls],[data-codex-composer-sparkles],[data-codex-usage-gauge],[data-codex-context-widget]')");
   const fits = state => state.rows.length===6 && state.rows.every((row,i) => row.scroll<=row.width+1 && row.rect.width>=state.section.width-2 && (!i || row.rect.y>=state.rows[i-1].rect.bottom));
-  const checks = { wideSettings:fits(wide),narrowSettings:fits(narrow),modeNotSqueezed:Math.abs(wide.mode.width-nativeModeWidth)<1,quotaSeparate:wide.placement==='navigation-rail'&&wide.gauge.bottom<=wide.profile.y&&wide.profile.width===36,riderSpeed:wide.active==='3.2s'&&wide.idle==='5.6s',animationMoves:motion,noLightFeature:wide.lightControls===0,independentSwitch:switches.independent,composerToggle:switches.off&&switches.on,nativeLight:!light.layout&&!light.sparkles&&light.coreDisplay==='none'&&light.gaugeDisplay==='none'&&!light.context.includes('data-codex-context-widget')&&light.context.includes('title="Native context"'),darkRestores:restored,official,reinjectionUnique:unique,nativeFixtureInput:input,unmount:removed,noRuntimeErrors:errors.length===0};
-  fs.writeFileSync(path.join(output,'result.json'),JSON.stringify({checks,wide,narrow,light,errors},null,2));
+  const checks = { workerDuringUIBlock:workerBlocked.mode==='worker'&&workerBlocked.frames>=12&&workerBlocked.maxGap<100,workerIdleCap:workerIdle.frames>=12&&workerIdle.frames<=18,workerHiddenPause:!workerHidden.running&&workerHidden.frames===0,workerResumes:workerResumed.running,workerDisabled:!workerOff.running&&workerOff.canvases===0,workerTerminated,workerFallback:fallback.mode==='main'&&fallback.canvases>0,wideSettings:fits(wide),narrowSettings:fits(narrow),modeNotSqueezed:Math.abs(wide.mode.width-nativeModeWidth)<1,quotaSeparate:wide.placement==='navigation-rail'&&wide.gauge.bottom<=wide.profile.y&&wide.profile.width===36,riderSpeed:wide.active==='3.2s'&&wide.idle==='5.6s',animationMoves:motion,noLightFeature:wide.lightControls===0,independentSwitch:switches.independent,composerToggle:switches.off&&switches.on,nativeLight:!light.layout&&!light.sparkles&&light.coreDisplay==='none'&&light.gaugeDisplay==='none'&&!light.context.includes('data-codex-context-widget')&&light.context.includes('title="Native context"'),darkRestores:restored,official,reinjectionUnique:unique,nativeFixtureInput:input,unmount:removed,noRuntimeErrors:errors.length===0};
+  fs.writeFileSync(path.join(output,'result.json'),JSON.stringify({checks,wide,narrow,light,workerBlocked,workerIdle,workerHidden,workerResumed,workerOff,fallback,errors},null,2));
   console.log(JSON.stringify({checks,output},null,2));
   if(Object.values(checks).some(v=>!v))process.exitCode=1;
 } finally {

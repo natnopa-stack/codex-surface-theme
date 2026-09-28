@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$PackageRoot = $PSScriptRoot,
-    [string]$ZipName = "codex-surface-theme-1.12.3.zip",
+    [string]$ZipName = "codex-surface-theme-1.15.8-dark.zip",
     [switch]$SkipTest
 )
 
@@ -40,6 +40,7 @@ function Test-ForbiddenRelative([string]$RelPath) {
         if ($segments.Count -eq 2 -and $leaf.EndsWith(".mjs")) { return $false }
         return $true
     }
+    if ($RelPath -eq "engine/light-sheet.mjs") { return $true }
     if ($first -eq "AGENTS.md") { return $true }
     if ($leaf -in @("runtime.json", "recovery-state.json", "RECOVERY-SHA256.txt", "VERIFY-RECOVERY.cmd", "Verify-RecoveryHashes.ps1", "FINAL-BACKUP-REPORT.md", "design-qa.md", "DS-SOL-P2-CORRECTION.md", "SHA256SUMS.txt")) { return $true }
     if ($leaf.EndsWith(".log") -or $leaf.EndsWith(".png") -or $leaf.EndsWith(".lnk")) { return $true }

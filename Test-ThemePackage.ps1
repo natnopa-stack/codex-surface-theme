@@ -191,6 +191,9 @@ foreach ($entry in $markers.GetEnumerator()) {
 Add-Check ($injector.Contains('onlineCoreEnabledStorageKey')) "independent Online Core storage"
 Add-Check ($injector.Contains('requestAnimationFrame(renderVoxOscilloscopes)')) "VOX shared animation loop"
 Add-Check ($injector.Contains('const voxActiveFrameInterval = 1000 / 30')) "VOX active frame-rate governor"
+Add-Check ($manifest.themeScope -eq "dark-only") "public package is dark-only"
+Add-Check (-not (Test-Path -LiteralPath (Join-Path $engineRoot "light-sheet.mjs"))) "experimental light renderer excluded"
+Add-Check (-not $injector.Contains('light-sheet.mjs')) "no experimental light runtime dependency"
 Add-Check ($injector.Contains('const voxIdleFrameInterval = 1000 / 15')) "VOX idle frame-rate governor"
 Add-Check ($injector.Contains('voxPaintedCanvases')) "VOX observer repaint deduplication"
 Add-Check ($injector.Contains('window.devicePixelRatio')) "VOX DPR-aware canvas"
@@ -252,6 +255,7 @@ Add-Check ($activityWidgetQa.Contains('status: "done"')) "LIVE ACTIVITY QA done 
 # Release manifest guard: every listed public file must exist and match its
 # SHA-256, and machine-specific / internal files must never be listed.
 $forbiddenManifestPatterns = @(
+    ".git",
     "*.log",
     "*.png",
     "*.lnk",

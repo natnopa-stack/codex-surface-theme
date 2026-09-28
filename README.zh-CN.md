@@ -8,9 +8,13 @@
 
 Codex Surface Theme 是面向 Windows 桌面版 Codex 的本地视觉主题包，以**暗色模式**作为唯一正式视觉基线。它通过一次性 CDP 注入叠加扁平 Surface 层级与信号组件，不修改官方安装文件，也不保留独立后台进程。
 
+## 本次更新
+
+新版外观设置独立分区，额度移入导航栏，LIVE ACTIVITY 在目录底部独立占位；VOX 修复相位跳变和状态更新引发的项目重刷。深色支持输入框流光/星光独立开关与自定义色。详见 [1.15.8 发布说明](docs/RELEASE-NOTES-1.15.8.md)。
+
 ## 状态
 
-- 当前版本：`1.12.3`（见 [theme.json](theme.json)）
+- 当前版本：`1.15.8`（见 [theme.json](theme.json)）
 - 包标识：`local.codex.surface-theme`
 - 注入方式：一次性 CDP 注入（`one-shot-cdp`）
 - 正式支持的 Surface 颜色模式：`深色`
@@ -28,8 +32,8 @@ Codex Surface Theme 是面向 Windows 桌面版 Codex 的本地视觉主题包�
 - 左上角 Online Core、Assistant 状态条、LIVE ACTIVITY 三个独立开关；
 - LIVE ACTIVITY 只显示可观察到的任务、工具与 Agent 状态，不伪造未知百分比；
 - Composer Context 圆环五色快捷配色；
-- 用户名旁额度仪表（`隐藏 / 状态 / 精确` 三档），只读渲染器已有查询缓存；
-- 切到“原版”会撤下全部 Surface 组件；切回“Surface”恢复。浅色与跟随系统模式不属于当前 Surface 的正式适配范围。
+- 导航栏独立额度仪表（`隐藏 / 状态 / 精确` 三档），只读渲染器已有查询缓存；
+- 切到“原版”会撤下全部 Surface 组件；切回“Surface”恢复。Surface 仅在实际深色模式生效；切换浅色时恢复原版，返回深色时恢复保存的 Surface 选择。
 
 完整使用说明见 [docs/USAGE.md](docs/USAGE.md)。
 

@@ -483,7 +483,7 @@
 /* Dark and custom-dark Codex themes keep their own palette. Surface only
  * derives nearby layers from native tokens, so changing the built-in theme is
  * still visible while the structural treatment remains enabled. */
-:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark) {
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark, [data-theme="dark"]) {
   --surface-base: color-mix(
     in srgb,
     var(--color-background-surface-under, #171817) 88%,
@@ -1170,7 +1170,7 @@
   --codex-project-color-selection-ring: rgb(20 20 20 / 78%);
 }
 
-:root:is(.dark, .electron-dark) {
+:root:is(.dark, .electron-dark, [data-theme="dark"]) {
   --codex-project-color-gray: #a3a3a3;
   --codex-project-color-red: #ef6b73;
   --codex-project-color-orange: #ed8b4a;
@@ -1383,7 +1383,7 @@
   font-family: inherit;
 }
 
-:root:is(.dark, .electron-dark) [data-codex-project-color-popover="true"] {
+:root:is(.dark, .electron-dark, [data-theme="dark"]) [data-codex-project-color-popover="true"] {
   color: var(--color-token-text-primary, #f0f0f0) !important;
   background: var(--color-token-main-surface-primary, #252525) !important;
   box-shadow:
@@ -1497,7 +1497,7 @@
   --codex-usage-muted: rgb(236 238 244 / 54%);
 }
 
-:root:is(.dark, .electron-dark) {
+:root:is(.dark, .electron-dark, [data-theme="dark"]) {
   --codex-context-track: rgb(255 255 255 / 16%);
   --codex-context-hover: rgb(255 255 255 / 6%);
   --codex-context-accent: #b59aff;
@@ -1554,35 +1554,35 @@
   --codex-live-violet: #eb7065;
 }
 
-:root:is(.dark, .electron-dark)[data-codex-live-activity-accent="blue"] {
+:root:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-live-activity-accent="blue"] {
   --codex-live-border-violet: rgb(92 158 255 / 70%);
   --codex-live-border-blue: rgb(135 194 255 / 68%);
   --codex-live-blue: #5c9eff;
   --codex-live-violet: #87c2ff;
 }
 
-:root:is(.dark, .electron-dark)[data-codex-live-activity-accent="cyan"] {
+:root:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-live-activity-accent="cyan"] {
   --codex-live-border-violet: rgb(52 202 224 / 70%);
   --codex-live-border-blue: rgb(123 235 238 / 68%);
   --codex-live-blue: #34cae0;
   --codex-live-violet: #7bebee;
 }
 
-:root:is(.dark, .electron-dark)[data-codex-live-activity-accent="green"] {
+:root:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-live-activity-accent="green"] {
   --codex-live-border-violet: rgb(87 202 111 / 70%);
   --codex-live-border-blue: rgb(139 232 148 / 66%);
   --codex-live-blue: #57ca6f;
   --codex-live-violet: #8be894;
 }
 
-:root:is(.dark, .electron-dark)[data-codex-live-activity-accent="amber"] {
+:root:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-live-activity-accent="amber"] {
   --codex-live-border-violet: rgb(230 157 49 / 72%);
   --codex-live-border-blue: rgb(255 205 89 / 68%);
   --codex-live-blue: #e69d31;
   --codex-live-violet: #ffcd59;
 }
 
-:root:is(.dark, .electron-dark)[data-codex-live-activity-accent="red"] {
+:root:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-live-activity-accent="red"] {
   --codex-live-border-violet: rgb(239 81 96 / 72%);
   --codex-live-border-blue: rgb(255 126 108 / 68%);
   --codex-live-blue: #ef5160;
@@ -1609,22 +1609,22 @@
   --codex-context-accent-glow: rgb(105 105 105 / 24%);
 }
 
-:root:is(.dark, .electron-dark)[data-codex-context-accent="blue"] {
+:root:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-context-accent="blue"] {
   --codex-context-accent: #78adf5;
   --codex-context-accent-glow: rgb(120 173 245 / 40%);
 }
 
-:root:is(.dark, .electron-dark)[data-codex-context-accent="green"] {
+:root:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-context-accent="green"] {
   --codex-context-accent: #72d49c;
   --codex-context-accent-glow: rgb(114 212 156 / 38%);
 }
 
-:root:is(.dark, .electron-dark)[data-codex-context-accent="amber"] {
+:root:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-context-accent="amber"] {
   --codex-context-accent: #e5bb68;
   --codex-context-accent-glow: rgb(229 187 104 / 38%);
 }
 
-:root:is(.dark, .electron-dark)[data-codex-context-accent="graphite"] {
+:root:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-context-accent="graphite"] {
   --codex-context-accent: #b0b0b0;
   --codex-context-accent-glow: rgb(176 176 176 / 28%);
 }
@@ -2156,7 +2156,7 @@
   font-family: inherit;
 }
 
-:root:is(.dark, .electron-dark) [data-codex-context-accent-popover="true"] {
+:root:is(.dark, .electron-dark, [data-theme="dark"]) [data-codex-context-accent-popover="true"] {
   color: var(--color-token-text-primary, #f0f0f0);
   background: var(--color-token-main-surface-primary, #242424);
   box-shadow: 0 14px 36px rgb(0 0 0 / 36%);

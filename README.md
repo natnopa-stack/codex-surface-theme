@@ -14,7 +14,7 @@ Codex Surface Theme 不只是给 Codex 换一套颜色，而是希望让这个�
 
 主题提供四种 Assistant 状态条：灵感来自 KITT 扫描灯的 **Rider**、适合暗色界面的紫白流光 **Current**、会随任务状态改变节奏的 **ECG** 心电图，以及带有放电感的 **VOX** 整流管电流。主输出区域和左上角的紧凑状态条可以分别开启或关闭。
 
-左下角加入了可折叠的 **LIVE ACTIVITY** 卡片。任务运行时，折叠状态会显示动态的 `RUNNING`；展开后可以查看当前模型、工具调用和 Agent 活动的简要信息。Composer 输入框增加了流动光带，项目文件夹的图标和颜色可以通过右键单独更换。设置页面提供动态组件开关和一键恢复原版界面的选项；用户名旁的额度仪表默认只显示电量格，点击后再查看精确百分比。
+左下角加入了可折叠的 **LIVE ACTIVITY** 卡片。任务运行时，折叠状态会显示动态的 `RUNNING`；展开后可以查看当前模型、工具调用和 Agent 活动的简要信息。Composer 输入框增加了流动光带，项目文件夹的图标和颜色可以通过右键单独更换。设置页面提供动态组件开关和一键恢复原版界面的选项；导航栏独立位置的额度仪表默认只显示电量格，点击后再查看精确百分比。
 
 整个主题以暗色模式为视觉基线，通过本机一次性注入运行，不修改 Codex 官方安装文件，也不会额外调用模型或消耗 Token。
 
@@ -24,7 +24,7 @@ Codex Surface Theme is more than a new color palette. It is designed to make the
 
 The theme includes four Assistant signal styles: **Rider**, inspired by KITT’s scanning light; **Current**, a purple-and-white flow designed for the dark interface; **ECG**, a heartbeat display that reacts to task activity; and **VOX**, an electric rectifier-tube effect. The main-output signal and the compact top-left signal can be enabled independently.
 
-A collapsible **LIVE ACTIVITY** card sits in the lower-left corner. While a task is running, its collapsed state shows an animated `RUNNING` label; when expanded, it summarizes the current model, tool calls, and Agent activity. The Composer gains a flowing light accent, project folder icons and colors can be changed from the right-click menu, and the settings page provides individual component switches together with an option to restore the original Codex interface. A compact usage gauge beside the username shows battery-style bars by default and reveals the exact percentage when clicked.
+A collapsible **LIVE ACTIVITY** card sits in the lower-left corner. While a task is running, its collapsed state shows an animated `RUNNING` label; when expanded, it summarizes the current model, tool calls, and Agent activity. The Composer gains a flowing light accent, project folder icons and colors can be changed from the right-click menu, and the settings page provides individual component switches together with an option to restore the original Codex interface. A compact usage gauge in its own navigation-rail slot shows battery-style bars by default and reveals the exact percentage when clicked.
 
 The theme is built around dark mode and runs through one-shot local injection. It does not modify the official Codex installation, make additional model requests, or consume extra model tokens.
 
@@ -46,9 +46,13 @@ The following GIFs are deterministic, sanitized component reconstructions rather
 
 Both GIFs live in `docs/media/`, render directly on the GitHub repository page, and are not loaded by the theme runtime. See [docs/SHOWCASE.md](docs/SHOWCASE.md) for a component-by-component explanation.
 
+## Current update
+
+Version 1.15.8 adapts Appearance settings and the navigation rail, reserves a compact directory footer for LIVE ACTIVITY, and fixes VOX phase jumps and unnecessary project refreshes. Composer runner/particles have an independent switch and custom color. Surface follows resolved dark mode; light mode uses the native interface. See [release notes](docs/RELEASE-NOTES-1.15.8.md).
+
 ## Status
 
-- Theme version: `1.12.3` ([theme.json](theme.json))
+- Theme version: `1.15.8` ([theme.json](theme.json))
 - Package ID: `local.codex.surface-theme`
 - Injection mode: `one-shot-cdp`
 - Supported Surface color mode: Codex `Dark`

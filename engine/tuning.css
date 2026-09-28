@@ -6,8 +6,76 @@
  */
 
 /* --------------------------------------------------------------------------
- * Surface geometry and neutral light palette
+ * Surface geometry (dark release)
  * ----------------------------------------------------------------------- */
+/* September navigation rail: quota occupies its own slot above the footer. */
+[data-codex-usage-gauge="true"][data-placement="navigation-rail"] {
+  inline-size: 36px;
+  block-size: 36px;
+  min-inline-size: 36px;
+  margin: 0;
+  padding: 4px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 8px;
+}
+
+/* Own the layout of theme additions without changing native settings rows. */
+[data-codex-appearance-controls="true"] {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  container: codex-surface-settings / inline-size;
+}
+[data-codex-appearance-controls="true"] > div {
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  margin: 0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+[data-codex-appearance-controls="true"] > div > :first-child {
+  flex: 1 1 250px;
+  min-width: 0;
+}
+[data-codex-appearance-controls="true"] > div > :last-child {
+  max-width: 100%;
+  flex-shrink: 0;
+}
+[data-codex-appearance-controls="true"] [data-codex-assistant-indicator-options] {
+  display: flex;
+  flex-wrap: wrap;
+  flex-shrink: 1;
+  max-width: 100%;
+}
+[data-codex-appearance-controls="true"] [data-codex-assistant-indicator-value] {
+  flex: 1 0 auto;
+}
+@container codex-surface-settings (max-width: 560px) {
+  [data-codex-appearance-controls="true"] > div {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  [data-codex-appearance-controls="true"] > div > :first-child {
+    flex-basis: auto;
+  }
+  [data-codex-appearance-controls="true"] [data-codex-assistant-indicator-actions],
+  [data-codex-appearance-controls="true"] [data-codex-live-activity-actions] {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+
+/* Official layout hides Surface-only telemetry without changing preferences. */
+:root:not([data-codex-surface-layout="surface"])
+  :is([data-codex-live-activity="true"], [data-codex-usage-gauge="true"],
+      [data-codex-usage-gauge-popover="true"]) {
+  display: none !important;
+}
+
 :root[data-codex-surface-layout="surface"] {
   --surface-gap: 8px;
   --surface-radius: 12px;
@@ -37,13 +105,26 @@
 }
 
 /* Preserve the accepted brighter runner in official/custom dark themes. */
-:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark) {
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark, [data-theme="dark"]) {
   --surface-composer-ring-opacity: 1;
   --surface-composer-ring-mask-mid: 0.5;
   --surface-composer-ring-mask-bottom: 0.06;
   --surface-composer-ring-track: rgb(255 255 255 / 12%);
   --surface-composer-ring-cyan: rgb(0 229 255);
   --surface-composer-ring-magenta: rgb(240 0 255);
+}
+
+/* Custom message colors use the saved swatch, not Codex's pale accent surface.
+ * The corresponding ink is calculated against that exact swatch. */
+:root[data-codex-surface-layout="surface"][data-theme="dark"][data-codex-custom-message-dark] {
+  --surface-user-custom-accent: var(--codex-custom-message-accent-dark, var(--app-color-background-accent));
+  --surface-user-custom-ink: var(--codex-custom-message-ink-dark, var(--app-color-text-on-accent));
+}
+:root[data-codex-surface-layout="surface"][data-theme="dark"][data-codex-custom-message-dark]
+  [data-user-message-bubble="true"] {
+  --color-text-user-message: var(--surface-user-custom-ink);
+  background-color: var(--surface-user-custom-accent) !important;
+  color: var(--surface-user-custom-ink) !important;
 }
 
 /* Codex 26.803+ mounts the Add Context menu above the Composer inside the
@@ -54,6 +135,105 @@
   :has(> [data-composer-surface-variant]) {
   overflow: visible !important;
 }
+
+/* Sparkles alternative: a fine blue/violet beam with a shallow star field.
+ * The decoration never owns input, changes Composer geometry, or clips menus. */
+:root[data-codex-surface-layout="surface"][data-codex-composer-effect-enabled="false"]
+  :has(> [data-composer-surface-variant])::before,
+:root[data-codex-surface-layout="surface"][data-codex-composer-effect="sparkles"]
+  :has(> [data-composer-surface-variant])::before {
+  content: none !important;
+  animation: none !important;
+}
+
+[data-codex-composer-sparkles="true"] {
+  display: none;
+  position: absolute;
+  z-index: 2;
+  inset: 0 0 auto;
+  height: 28px;
+  overflow: hidden;
+  contain: layout paint;
+  border-radius: var(--surface-composer-radius) var(--surface-composer-radius) 0 0;
+  pointer-events: none !important;
+  user-select: none;
+  --sparkle-color: color-mix(in srgb, var(--codex-composer-accent, #38bdf8) 70%, #202040);
+  mask-image: radial-gradient(ellipse 65% 100% at 50% 0, #000 25%, transparent 100%);
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-composer-effect="sparkles"]
+  [data-codex-composer-sparkles="true"] {
+  display: block;
+}
+
+:root:is(.dark, .electron-dark, [data-theme="dark"]) [data-codex-composer-sparkles="true"] {
+  --sparkle-color: color-mix(in srgb, var(--codex-composer-accent, #38bdf8) 15%, white);
+}
+
+[data-codex-composer-sparkles="true"]::before,
+[data-codex-composer-sparkles="true"]::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+[data-codex-composer-sparkles="true"]::before {
+  inset: 0 8% auto;
+  z-index: 1;
+  height: 0.5px;
+  opacity: 0.8;
+  background: linear-gradient(90deg, transparent,
+    color-mix(in srgb, var(--codex-composer-accent, #38bdf8) 55%, transparent) 28%,
+    color-mix(in srgb, var(--codex-composer-accent, #38bdf8) 60%, white) 46%,
+    color-mix(in srgb, var(--codex-composer-accent, #38bdf8) 15%, white) 50%,
+    color-mix(in srgb, var(--codex-composer-accent, #38bdf8) 60%, white) 54%,
+    color-mix(in srgb, var(--codex-composer-accent, #38bdf8) 55%, transparent) 72%, transparent);
+}
+
+[data-codex-composer-sparkles="true"]::after {
+  inset: 0 8% auto;
+  height: 26px;
+  /* Keep reflection close to the hairline; a low-opacity wash fades down
+   * from the center without turning the emitter into a thick luminous bar. */
+  background:
+    radial-gradient(ellipse 8% 1px at 50% 0, rgb(255 255 255 / 28%), transparent 90%),
+    radial-gradient(ellipse 22% 5px at 50% 0,
+      color-mix(in srgb, var(--codex-composer-accent, #38bdf8) 25%, transparent),
+      color-mix(in srgb, var(--codex-composer-accent, #38bdf8) 12%, transparent) 35%,
+      transparent 95%),
+    radial-gradient(ellipse 40% 24px at 50% -3px,
+      color-mix(in srgb, var(--codex-composer-accent, #38bdf8) 14%, transparent),
+      color-mix(in srgb, var(--codex-composer-accent, #38bdf8) 7%, transparent) 30%,
+      color-mix(in srgb, var(--codex-composer-accent, #38bdf8) 2%, transparent) 60%,
+      transparent 90%);
+}
+
+[data-codex-composer-sparkles="true"] > span {
+  position: absolute;
+  width: var(--sparkle-size);
+  height: var(--sparkle-size);
+  border-radius: 50%;
+  background: var(--sparkle-color);
+  pointer-events: none !important;
+  opacity: 0;
+  animation: surface-composer-sparkle calc(var(--sparkle-duration) * 0.8) ease-in-out
+    var(--sparkle-delay) infinite;
+  will-change: transform, opacity;
+  animation-play-state: paused;
+}
+
+[data-codex-composer-sparkles="true"][data-running="true"] > span {
+  animation-play-state: running;
+}
+
+@keyframes surface-composer-sparkle {
+  0%, 100% { opacity: 0.04; transform: translate3d(0, -2px, 0); }
+  38% { opacity: 1; }
+  72% { opacity: 0.12; transform: translate3d(1px, 4px, 0); }
+}
+
+/* Selecting Sparkles explicitly enables its animation, including when the
+ * system requests reduced motion. Visibility still controls pause/resume. */
 
 /* Codex 26.803 renders its native source-directory chooser over the xterm
  * rows. Keep that native control and its shortcuts intact, but give it an
@@ -374,7 +554,7 @@
 }
 
 /* Dark themes can afford brighter phosphor and a wider glow halo. */
-:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="rider"] {
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-assistant-indicator="rider"] {
   --surface-assistant-thinking-line:
     linear-gradient(
       90deg,
@@ -398,7 +578,7 @@
     0 0 8px rgb(255 20 20 / 15%);
 }
 
-:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="current"] {
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-assistant-indicator="current"] {
   --surface-assistant-thinking-line:
     linear-gradient(
       90deg,
@@ -450,7 +630,7 @@
   inset-block-start: -2px !important;
 }
 
-:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="ecg"] {
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-assistant-indicator="ecg"] {
   --surface-assistant-thinking-line:
     linear-gradient(
       90deg,
@@ -487,7 +667,7 @@
   --codex-project-color-purple: #7f5ab8;
 }
 
-:root:is(.dark, .electron-dark) {
+:root:is(.dark, .electron-dark, [data-theme="dark"]) {
   --codex-project-color-gray: #a3a3a3;
   --codex-project-color-red: #ef6b73;
   --codex-project-color-orange: #ed8b4a;
@@ -509,7 +689,11 @@
   display: flex !important;
   flex-direction: column;
   align-items: stretch;
-  gap: 4px;
+  gap: 1px;
+}
+
+:root[data-codex-surface-layout="surface"] [data-app-action-sidebar-scroll] {
+  row-gap: 10px !important;
 }
 
 :root[data-codex-surface-layout="surface"] [data-codex-project-grid-item="true"] {
@@ -523,8 +707,8 @@
 
 :root[data-codex-surface-layout="surface"]
   [data-codex-project-card="true"] [data-app-action-sidebar-project-row] {
-  height: 40px !important;
-  min-height: 40px;
+  height: 30px !important;
+  min-height: 30px;
   border-radius: 7px !important;
   background: transparent !important;
 }
@@ -535,8 +719,8 @@
 :root[data-codex-surface-layout="surface"]
   [data-codex-project-card="true"][data-codex-project-expanded="true"]
   [data-app-action-sidebar-project-row] {
-  height: 40px !important;
-  min-height: 40px;
+  height: 30px !important;
+  min-height: 30px;
 }
 
 :root[data-codex-surface-layout="surface"]
@@ -548,7 +732,7 @@
 :root[data-codex-surface-layout="surface"]
   [data-codex-project-card="true"] [data-sidebar-project-drop-zone="project-icon"] {
   width: 28px !important;
-  height: 40px !important;
+  height: 30px !important;
   margin-inline: 0 !important;
 }
 
@@ -563,13 +747,13 @@
 }
 
 :root[data-codex-surface-layout="surface"]
-  [data-codex-project-card="true"] [data-sidebar-project-drop-zone="project-icon"]
+  [data-app-action-sidebar-project-row] [data-sidebar-project-drop-zone="project-icon"]
   > svg:not([data-codex-project-icon]) {
   display: none !important;
 }
 
 :root[data-codex-surface-layout="surface"]
-  [data-codex-project-card="true"] [data-codex-project-icon] {
+  [data-app-action-sidebar-project-row] [data-codex-project-icon] {
   display: block !important;
   width: 19px !important;
   height: 19px !important;
@@ -598,6 +782,19 @@
   mask-image: linear-gradient(90deg, #000 calc(100% - 18px), transparent);
 }
 
+/* Dark directories use a continuous text list; lime only marks interaction. */
+:root[data-codex-surface-layout="surface"][data-theme="dark"]
+  [data-app-action-sidebar-project-row] [data-marquee-content] {
+  color: var(--surface-ink);
+}
+:root[data-codex-surface-layout="surface"][data-theme="dark"]
+  [data-app-action-sidebar-project-row]:is(:hover, :focus-within) [data-marquee-content],
+:root[data-codex-surface-layout="surface"][data-theme="dark"]
+  [data-codex-project-card="true"][data-codex-project-expanded="true"]
+  [data-app-action-sidebar-project-row] [data-marquee-content] {
+  color: #d6ff63;
+}
+
 :root[data-codex-surface-layout="surface"]
   [data-codex-project-card="true"] [data-app-action-sidebar-project-row]:hover {
   background: color-mix(in srgb, var(--surface-ink) 5%, transparent) !important;
@@ -608,7 +805,7 @@
   > .overflow-hidden {
   box-sizing: border-box;
   margin-inline-start: 19px;
-  padding: 3px 0 7px 22px;
+  padding: 2px 0 5px 22px;
   overflow: visible !important;
   border-block-start: 0;
   border-inline-start: 1px solid color-mix(
@@ -622,8 +819,8 @@
   [data-codex-project-card="true"] [data-app-action-sidebar-thread-row] {
   position: relative;
   box-sizing: border-box;
-  height: 32px !important;
-  min-height: 32px;
+  height: 30px !important;
+  min-height: 30px;
   padding-inline-start: 11px !important;
   border-radius: 7px !important;
 }
@@ -810,7 +1007,8 @@
 :is(
   [data-codex-online-core-control="true"],
   [data-codex-live-activity-control="true"],
-  [data-codex-usage-gauge-control="true"]
+  [data-codex-usage-gauge-control="true"],
+  [data-codex-composer-effect-control="true"]
 ) {
   display: flex;
   align-items: center;
@@ -831,7 +1029,8 @@
 :is(
   [data-codex-online-core-copy="true"],
   [data-codex-live-activity-copy="true"],
-  [data-codex-usage-gauge-copy="true"]
+  [data-codex-usage-gauge-copy="true"],
+  [data-codex-composer-effect-copy="true"]
 ) {
   min-width: 0;
 }
@@ -839,7 +1038,8 @@
 :is(
   [data-codex-online-core-title="true"],
   [data-codex-live-activity-control-title="true"],
-  [data-codex-usage-gauge-control-title="true"]
+  [data-codex-usage-gauge-control-title="true"],
+  [data-codex-composer-effect-title="true"]
 ) {
   color: var(--color-token-text-primary, currentColor);
   font-size: 14px;
@@ -850,7 +1050,8 @@
 :is(
   [data-codex-online-core-description="true"],
   [data-codex-live-activity-control-description="true"],
-  [data-codex-usage-gauge-control-description="true"]
+  [data-codex-usage-gauge-control-description="true"],
+  [data-codex-composer-effect-description="true"]
 ) {
   margin-top: 2px;
   color: var(--color-token-text-secondary, rgb(127 127 127));
@@ -876,7 +1077,8 @@
   min-width: 0;
 }
 
-[data-codex-usage-gauge-options="true"] {
+[data-codex-usage-gauge-options="true"],
+[data-codex-composer-effect-options="true"] {
   display: grid;
   grid-template-columns: repeat(3, minmax(52px, 1fr));
   flex: 0 0 auto;
@@ -887,7 +1089,7 @@
   background: var(--color-token-bg-primary, transparent);
 }
 
-[data-codex-usage-gauge-mode-value] {
+:is([data-codex-usage-gauge-mode-value], [data-codex-composer-effect-value]) {
   min-block-size: 30px;
   padding-inline: 10px;
   border: 0;
@@ -902,18 +1104,18 @@
   cursor: pointer;
 }
 
-[data-codex-usage-gauge-mode-value]:hover {
+:is([data-codex-usage-gauge-mode-value], [data-codex-composer-effect-value]):hover {
   color: var(--color-token-text-primary, currentColor);
   background: var(--color-token-list-hover-background, rgb(127 127 127 / 8%));
 }
 
-[data-codex-usage-gauge-mode-value][data-active] {
+:is([data-codex-usage-gauge-mode-value], [data-codex-composer-effect-value])[data-active] {
   color: var(--color-token-text-primary, currentColor);
   background: var(--color-background-control-opaque, rgb(255 255 255 / 96%));
   box-shadow: inset 0 0 0 1px var(--color-token-border, rgb(127 127 127 / 18%));
 }
 
-[data-codex-usage-gauge-mode-value]:focus-visible {
+:is([data-codex-usage-gauge-mode-value], [data-codex-composer-effect-value]):focus-visible {
   outline: 2px solid var(--color-token-focus-border, #4f7cff);
   outline-offset: 1px;
 }
@@ -983,13 +1185,14 @@
 }
 
 [data-codex-assistant-indicator-options="true"] {
-  grid-template-columns: repeat(4, minmax(58px, 1fr));
+  grid-template-columns: repeat(5, minmax(58px, 1fr));
 }
 
 :is(
   [data-codex-online-core-switch="true"],
   [data-codex-assistant-enabled-switch="true"],
-  [data-codex-live-activity-switch="true"]
+  [data-codex-live-activity-switch="true"],
+  [data-codex-composer-effect-switch="true"]
 ) {
   position: relative;
   box-sizing: border-box;
@@ -1011,7 +1214,8 @@
 :is(
   [data-codex-online-core-knob="true"],
   [data-codex-assistant-enabled-knob="true"],
-  [data-codex-live-activity-knob="true"]
+  [data-codex-live-activity-knob="true"],
+  [data-codex-composer-effect-knob="true"]
 ) {
   display: block;
   inline-size: 18px;
@@ -1026,7 +1230,8 @@
 :is(
   [data-codex-online-core-switch="true"],
   [data-codex-assistant-enabled-switch="true"],
-  [data-codex-live-activity-switch="true"]
+  [data-codex-live-activity-switch="true"],
+  [data-codex-composer-effect-switch="true"]
 )[data-active] {
   border-color: #4f7cff;
   background: #4f7cff;
@@ -1038,14 +1243,17 @@
 [data-codex-assistant-enabled-switch="true"][data-active]
   [data-codex-assistant-enabled-knob="true"],
 [data-codex-live-activity-switch="true"][data-active]
-  [data-codex-live-activity-knob="true"] {
+  [data-codex-live-activity-knob="true"],
+[data-codex-composer-effect-switch="true"][data-active]
+  [data-codex-composer-effect-knob="true"] {
   transform: translateX(18px);
 }
 
 :is(
   [data-codex-online-core-switch="true"],
   [data-codex-assistant-enabled-switch="true"],
-  [data-codex-live-activity-switch="true"]
+  [data-codex-live-activity-switch="true"],
+  [data-codex-composer-effect-switch="true"]
 ):focus-visible {
   outline: 2px solid var(--color-token-focus-border, #4f7cff);
   outline-offset: 2px;
@@ -1060,7 +1268,8 @@
   :is(
     [data-codex-online-core-control="true"],
     [data-codex-live-activity-control="true"],
-    [data-codex-usage-gauge-control="true"]
+    [data-codex-usage-gauge-control="true"],
+  [data-codex-composer-effect-control="true"]
   ) {
     align-items: center;
   }
@@ -1073,9 +1282,43 @@
     flex-wrap: wrap;
   }
 
-  [data-codex-usage-gauge-options="true"] {
+  [data-codex-usage-gauge-options="true"],
+[data-codex-composer-effect-options="true"] {
     grid-template-columns: repeat(3, minmax(48px, 1fr));
   }
+}
+
+/* New navigation layout: reserve a compact footer in the directory column. */
+[data-codex-live-activity="true"][data-placement="sidebar-footer"] {
+  position: relative;
+  inset: auto;
+  flex: 0 0 auto;
+  inline-size: calc(100% - 16px);
+  min-inline-size: 0;
+  margin: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+[data-codex-live-activity="true"][data-placement="sidebar-footer"] [data-codex-live-header="true"] {
+  gap: 6px;
+  min-block-size: 18px;
+}
+[data-codex-live-activity="true"][data-placement="sidebar-footer"] [data-codex-live-title="true"] {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+[data-codex-live-activity="true"][data-placement="sidebar-footer"] [data-codex-live-body="true"] {
+  margin-top: 6px;
+}
+[data-codex-live-activity="true"][data-placement="sidebar-footer"] [data-codex-live-rows="true"] {
+  margin-top: 0;
+  gap: 4px;
+}
+[data-codex-live-activity="true"][data-placement="sidebar-footer"] [data-codex-live-row] {
+  grid-template-columns: 48px minmax(0, 1fr);
+}
+[data-codex-live-activity="true"][data-placement="sidebar-footer"]:is([data-condensed], [data-live-state="idle"]) {
+  padding-block: 6px;
 }
 
 /* Live Activity status output replaces speculative progress segments. */
@@ -1262,13 +1505,11 @@
  * low energy while Codex is idle and intensifies whenever the current task is
  * thinking or streaming. Set --codex-online-core-display:none to hide only it.
  * ----------------------------------------------------------------------- */
-/* One complete Rider cycle has the same 2.8 s semantics as the response rail:
- * left -> right -> left. Using `alternate` here previously made the same
- * numeric duration mean only one leg, so the sidebar scanner ran at half the
- * perceived speed while Assistant was active. */
+/* One Rider cycle is left -> right -> left. Active motion is only slightly
+ * faster than idle; afterimages replay the same trajectory with a delay. */
 @keyframes codex-online-core-rider-cycle {
-  0%, 100% { inset-inline-start: -82px; }
-  50% { inset-inline-start: 100%; }
+  0%, 100% { transform: translate3d(-82px, -50%, 0); }
+  50% { transform: translate3d(100cqw, -50%, 0); }
 }
 
 @keyframes codex-online-core-plasma-breathe {
@@ -1291,84 +1532,27 @@
   }
 }
 
-@keyframes codex-online-core-ecg-flow {
-  0% {
-    background-position: -76px 0, 0 0;
-    opacity: 0.76;
-    filter: brightness(1);
-  }
-
-  18% {
-    opacity: 0.8;
-    filter: brightness(1);
-  }
-
-  21% {
-    opacity: 1;
-    filter: brightness(1.5);
-  }
-
-  24% {
-    opacity: 0.82;
-    filter: brightness(1);
-  }
-
-  29% {
-    opacity: 0.98;
-    filter: brightness(1.34);
-  }
-
-  33% {
-    opacity: 0.8;
-    filter: brightness(1);
-  }
-
-  100% {
-    background-position: calc(100% + 76px) 0, 0 0;
-    opacity: 0.76;
-    filter: brightness(1);
-  }
+/* The trace mask wraps continuously; the head follows the same ECG vertices.
+ * Animate only this small strip, with no whole-wave opacity flashes. */
+@keyframes codex-online-core-ecg-draw {
+  from { mask-position: 0 0; }
+  to { mask-position: 100cqw 0; }
 }
 
-@keyframes codex-online-core-ecg-beat {
-  0% {
-    inset-inline-start: 0;
-    opacity: 0;
-    transform: translateX(-100%) translateY(-50%) scaleX(0.92) scaleY(0.82);
-  }
-
-  17%,
-  25%,
-  34% {
-    opacity: 0;
-    transform: translateX(-100%) translateY(-50%) scaleX(0.92) scaleY(0.82);
-  }
-
-  20% {
-    opacity: 0.94;
-    transform: translateX(-100%) translateY(-50%) scaleX(1) scaleY(1.14);
-  }
-
-  22% {
-    opacity: 0.3;
-    transform: translateX(-100%) translateY(-50%) scaleX(1.04) scaleY(0.88);
-  }
-
-  29% {
-    opacity: 0.82;
-    transform: translateX(-100%) translateY(-50%) scaleX(0.98) scaleY(1.08);
-  }
-
-  32% {
-    opacity: 0.24;
-    transform: translateX(-100%) translateY(-50%) scaleX(1.02) scaleY(0.9);
-  }
-
-  100% {
-    inset-inline-start: calc(100% + 76px);
-    opacity: 0;
-    transform: translateX(-100%) translateY(-50%) scaleX(0.92) scaleY(0.82);
-  }
+@keyframes codex-online-core-ecg-head {
+  0% { transform: translate3d(calc(0cqw - 1px), calc(-50% + 0px), 0); }
+  18% { transform: translate3d(calc(18cqw - 1px), calc(-50% + 0px), 0); }
+  22% { transform: translate3d(calc(22cqw - 1px), calc(-50% + -2px), 0); }
+  26% { transform: translate3d(calc(26cqw - 1px), calc(-50% + 0px), 0); }
+  34% { transform: translate3d(calc(34cqw - 1px), calc(-50% + 0px), 0); }
+  37% { transform: translate3d(calc(37cqw - 1px), calc(-50% + 3px), 0); }
+  41% { transform: translate3d(calc(41cqw - 1px), calc(-50% + -8px), 0); }
+  46% { transform: translate3d(calc(46cqw - 1px), calc(-50% + 8px), 0); }
+  51% { transform: translate3d(calc(51cqw - 1px), calc(-50% + 0px), 0); }
+  63% { transform: translate3d(calc(63cqw - 1px), calc(-50% + 0px), 0); }
+  69% { transform: translate3d(calc(69cqw - 1px), calc(-50% + -3px), 0); }
+  76% { transform: translate3d(calc(76cqw - 1px), calc(-50% + 0px), 0); }
+  100% { transform: translate3d(calc(100cqw - 1px), calc(-50% + 0px), 0); }
 }
 
 [data-codex-online-core="true"] {
@@ -1460,7 +1644,8 @@
     transparent 100%
   );
   filter: drop-shadow(0 0 2px rgb(var(--codex-online-core-rgb) / 42%));
-  transform: translateY(-50%);
+  inset-inline-start: 0;
+  transform: translate3d(-82px, -50%, 0);
   animation: codex-online-core-rider-cycle var(--codex-online-core-duration) ease-in-out infinite;
   transition: block-size 180ms ease, filter 180ms ease;
 }
@@ -1469,7 +1654,14 @@
 :root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"] {
   --codex-online-core-rgb: 204 28 38;
   --codex-online-core-idle-duration: 5.6s;
-  --codex-online-core-active-duration: 2.8s;
+  --codex-online-core-active-duration: 3.2s;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"]
+  .app-shell-left-panel [data-codex-online-core="true"],
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="ecg"]
+  .app-shell-left-panel [data-codex-online-core="true"] {
+  container-type: inline-size;
 }
 
 /* The 176 px corner treatment needs a smaller optical core than the wide
@@ -1477,6 +1669,7 @@
  * capsule and broad halo that made the compact mark read soft. */
 :root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"]
   .app-shell-left-panel [data-codex-online-core="true"] {
+  --codex-online-core-width: 120px;
   --codex-online-core-runner-height: 4px;
 }
 
@@ -1559,7 +1752,7 @@
   block-size: 28px;
 }
 
-/* ECG green: one-way pulse with the same waveform as the response rail. */
+/* ECG green: continuously drawn heartbeat with a fading, wrapping trace. */
 :root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="ecg"] {
   --codex-online-core-rgb: 8 122 63;
   --codex-online-core-idle-duration: 4.8s;
@@ -1568,43 +1761,47 @@
 
 :root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="ecg"]
   [data-codex-online-core-rail="true"] {
-  background-image:
-    linear-gradient(
-      90deg,
-      transparent 0%,
-      rgb(8 122 63 / 4%) 10%,
-      rgb(8 122 63 / 10%) 28%,
-      rgb(8 122 63 / 21%) 52%,
-      rgb(9 132 68 / 42%) 72%,
-      rgb(10 142 73 / 72%) 88%,
-      #087a3f 96% 100%
-    ),
-    linear-gradient(rgb(8 122 63 / 18%), rgb(8 122 63 / 18%));
-  background-position: -76px 0, 0 0;
+  block-size: 20px;
+  background: none;
+  box-shadow: none;
+  opacity: 1;
+  filter: none;
+  animation: none;
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="ecg"]
+  [data-codex-online-core-rail="true"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20' preserveAspectRatio='none'%3E%3Cpath d='M0 10H18L22 8L26 10H34L37 13L41 2L46 18L51 10H63L69 7L76 10H100' fill='none' stroke='%23087A3F' stroke-width='1.35' vector-effect='non-scaling-stroke' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-size: 76px 100%, 100% 100%;
-  box-shadow:
-    0 0 2px rgb(8 90 47 / 28%),
-    0 0 5px rgb(8 122 63 / 12%);
-  animation: codex-online-core-ecg-flow var(--codex-online-core-duration) linear infinite;
+  background-size: 100% 100%;
+  filter: drop-shadow(0 0 1px rgb(8 122 63 / 30%));
+  mask-image: linear-gradient(90deg, transparent 0% 24%, #000 96% 100%);
+  mask-size: 100% 100%;
+  mask-repeat: repeat-x;
+  animation: codex-online-core-ecg-draw var(--codex-online-core-duration) linear infinite;
 }
 
 :root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="ecg"]
   [data-codex-online-core-mark="true"] {
-  inline-size: 40px;
-  block-size: 14px;
-  border-radius: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 14'%3E%3Cpath d='M0 7H8L11 6L13.5 8L17 0.8L21 13L24 7H40' fill='none' stroke='%23087A3F' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='39' cy='7' r='1.15' fill='%230A8E49'/%3E%3C/svg%3E");
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  filter: drop-shadow(0 0 2px rgb(8 122 63 / 42%));
-  animation: codex-online-core-ecg-beat var(--codex-online-core-duration) linear infinite;
+  inset-inline-start: 0;
+  inline-size: 2px;
+  block-size: 2px;
+  border-radius: 50%;
+  background: #087a3f;
+  opacity: 1;
+  box-shadow: 0 0 3px rgb(8 122 63 / 45%);
+  filter: none;
+  animation: codex-online-core-ecg-head var(--codex-online-core-duration) linear infinite;
+  will-change: transform;
 }
 
 /* The Rider highlight is a short pale-red plateau, not a detached white dot. */
 :root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"]
   [data-codex-online-core-mark="true"] {
+  will-change: transform;
   background:
     linear-gradient(
       90deg,
@@ -1623,78 +1820,171 @@
   filter: drop-shadow(0 0 1px rgb(164 18 28 / 38%));
 }
 
-/* Dark-mode phosphor keeps the accepted luminous energy; light mode above
- * uses denser pigments so the same geometry remains visible on white. */
-:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="rider"] {
-  --codex-online-core-rgb: 255 36 36;
+/* Each afterimage has its own delayed position. Faster motion naturally
+ * spreads them apart; at a turnaround they converge without flipping a tail. */
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"]
+  [data-codex-online-core="true"]::before,
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"]
+  [data-codex-online-core="true"]::after,
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"]
+  [data-codex-online-core-rail="true"]::before,
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"]
+  [data-codex-online-core-rail="true"]::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset-inline-start: 0;
+  inset-block-start: 50%;
+  inline-size: 76px;
+  block-size: 4px;
+  border-radius: 999px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 12%,
+    rgb(var(--codex-online-core-rgb) / 28%) 34%,
+    rgb(var(--codex-online-core-rgb) / 90%) 47% 53%,
+    rgb(var(--codex-online-core-rgb) / 28%) 66%,
+    transparent 88%
+  );
+  transform: translate3d(-82px, -50%, 0);
+  animation: codex-online-core-rider-cycle var(--codex-online-core-duration) ease-in-out infinite both;
 }
 
-:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="rider"]
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"]
+  [data-codex-online-core="true"]::before {
+  opacity: 0.38;
+  animation-delay: calc(var(--codex-online-core-duration) * 0.025);
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"]
+  [data-codex-online-core="true"]::after {
+  opacity: 0.24;
+  animation-delay: calc(var(--codex-online-core-duration) * 0.05);
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"]
+  [data-codex-online-core-rail="true"]::before {
+  opacity: 0.14;
+  animation-delay: calc(var(--codex-online-core-duration) * 0.075);
+}
+
+:root[data-codex-surface-layout="surface"][data-codex-assistant-indicator="rider"]
+  [data-codex-online-core-rail="true"]::after {
+  opacity: 0.07;
+  animation-delay: calc(var(--codex-online-core-duration) * 0.1);
+}
+
+/* Dark-mode phosphor keeps the accepted luminous energy; light mode above
+ * uses denser pigments so the same geometry remains visible on white. */
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-assistant-indicator="rider"] {
+  --codex-online-core-rgb: 255 52 62;
+  --codex-online-core-idle-opacity: 0.68;
+}
+
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-assistant-indicator="rider"]
   [data-codex-online-core-rail="true"] {
   box-shadow: 0 0 1.5px rgb(255 24 24 / 18%);
 }
 
-:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="rider"]
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-assistant-indicator="rider"]
   [data-codex-online-core-mark="true"] {
   background:
     linear-gradient(
       90deg,
       transparent 0%,
-      rgb(255 16 16 / 8%) 12%,
-      rgb(255 24 24 / 42%) 34%,
-      #ff2424 43%,
-      #ff4b4f 46%,
-      #ff827d 48% 52%,
-      #ff4b4f 54%,
-      #ff2424 57%,
-      rgb(255 24 24 / 42%) 66%,
-      rgb(255 16 16 / 8%) 88%,
+      rgb(255 40 48 / 12%) 12%,
+      rgb(255 52 62 / 52%) 34%,
+      #ff3e48 43%,
+      #ff6966 46%,
+      #ffb3a7 48% 52%,
+      #ff6966 54%,
+      #ff3e48 57%,
+      rgb(255 52 62 / 52%) 66%,
+      rgb(255 40 48 / 12%) 88%,
       transparent 100%
     );
-  filter: drop-shadow(0 0 1.25px rgb(255 24 24 / 48%));
+  filter: drop-shadow(0 0 1.25px rgb(255 52 62 / 58%));
 }
 
-:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="current"] {
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-assistant-indicator="current"] {
   --codex-online-core-rgb: 168 85 247;
 }
 
-:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="current"]
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-assistant-indicator="current"]
   [data-codex-online-core-rail="true"] {
   background-image: var(--surface-assistant-thinking-line);
   box-shadow: var(--surface-assistant-thinking-shadow);
 }
 
-:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="current"]
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-assistant-indicator="current"]
   [data-codex-online-core-mark="true"] {
   filter: var(--surface-assistant-thinking-beat-filter);
 }
 
-:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="ecg"] {
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-assistant-indicator="ecg"] {
   --codex-online-core-rgb: 52 232 108;
 }
 
-:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="ecg"]
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-assistant-indicator="ecg"]
   [data-codex-online-core-rail="true"] {
-  background-image:
-    linear-gradient(
-      90deg,
-      transparent 0%,
-      rgb(23 213 82 / 3%) 10%,
-      rgb(28 218 87 / 8%) 28%,
-      rgb(35 224 96 / 17%) 52%,
-      rgb(44 232 106 / 34%) 72%,
-      rgb(58 241 119 / 68%) 88%,
-      #7cff9e 95%,
-      #ffffff 98.5% 100%
-    ),
-    linear-gradient(rgb(45 220 99 / 15%), rgb(45 220 99 / 15%));
-  box-shadow:
-    0 0 4px rgb(52 232 108 / 34%),
-    0 0 8px rgb(52 232 108 / 13%);
+  background: none;
+  box-shadow: none;
 }
 
-:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark)[data-codex-assistant-indicator="ecg"]
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-assistant-indicator="ecg"]
+  [data-codex-online-core-rail="true"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20' preserveAspectRatio='none'%3E%3Cpath d='M0 10H18L22 8L26 10H34L37 13L41 2L46 18L51 10H63L69 7L76 10H100' fill='none' stroke='%2350FF80' stroke-width='1.35' vector-effect='non-scaling-stroke' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  filter: drop-shadow(0 0 1.5px rgb(52 232 108 / 42%));
+}
+
+:root[data-codex-surface-layout="surface"]:is(.dark, .electron-dark, [data-theme="dark"])[data-codex-assistant-indicator="ecg"]
   [data-codex-online-core-mark="true"] {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 14'%3E%3Cpath d='M0 7H8L11 6L13.5 8L17 0.8L21 13L24 7H40' fill='none' stroke='%237CFF9E' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='39' cy='7' r='1.2' fill='white'/%3E%3C/svg%3E");
-  filter: drop-shadow(0 0 3px rgb(52 232 108 / 58%));
+  background: #b2ffc8;
+  box-shadow: 0 0 3px rgb(80 255 128 / 72%);
+  filter: none;
+}
+
+[data-codex-composer-effect-options="true"] {
+  grid-template-columns: repeat(2, minmax(76px, 1fr));
+}
+
+[data-codex-composer-effect-actions="true"] {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+[data-codex-composer-accent-label="true"] {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-token-text-secondary, currentColor);
+}
+
+[data-codex-composer-accent-input="true"] {
+  width: 30px;
+  height: 30px;
+  padding: 3px;
+  border: 1px solid var(--color-token-border, rgb(127 127 127 / 24%));
+  border-radius: 7px;
+  background: transparent;
+  cursor: pointer;
+}
+
+[data-codex-composer-accent-input="true"]::-webkit-color-swatch-wrapper { padding: 0; }
+[data-codex-composer-accent-input="true"]::-webkit-color-swatch { border: 0; border-radius: 4px; }
+[data-codex-composer-accent-input="true"]:disabled { opacity: 0.4; cursor: default; }
+[data-codex-composer-accent-input="true"]:focus-visible {
+  outline: 2px solid var(--color-token-focus-border, #4f7cff);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  [data-codex-composer-effect-control="true"] { flex-wrap: wrap; }
+  [data-codex-composer-effect-actions="true"] { flex: 1 1 auto; }
 }

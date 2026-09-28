@@ -288,6 +288,9 @@ function buildApplyExpression() {
   const liveActivityEnabledStorageKey = "codex.live-activity-enabled.v1";
   const liveActivityAccentStorageKey = "codex.live-activity-accent.v1";
   const usageGaugeModeStorageKey = "codex.usage-gauge-mode.v1";
+  const composerEffectStorageKey = "codex.composer-effect.v1";
+  const composerEffectEnabledStorageKey = "codex.composer-effect-enabled.v1";
+  const composerAccentStorageKey = "codex.composer-accent.v1";
   const activeValue = "surface";
   const assistantIndicatorValues = new Set(["rider", "current", "ecg", "vox"]);
   const assistantIndicatorPlacementValues = new Set(["response", "corner"]);
@@ -359,17 +362,8 @@ function buildApplyExpression() {
     ["book", "\u4e66\u7c4d"],
     ["tools", "\u5de5\u5177"],
   ];
-  // 发布版移除作者个人项目名种子表；新用户可在外观设置中自行选择。
   const projectColorSeedsByLabel = new Map();
-  // 发布版移除作者个人项目名种子表；新用户可在外观设置中自行选择。
   const projectIconSeedsByLabel = new Map();
-
-  const legacySurfaceWasActive =
-    root.getAttribute("data-codex-surface-theme") === "gray-white" ||
-    (() => {
-      try { return localStorage.getItem(legacyStorageKey) === "gray-white"; }
-      catch { return false; }
-    })();
 
   globalThis[controllerKey]?.destroy?.();
   if (globalThis[legacyControllerKey] !== globalThis[controllerKey]) {
@@ -397,6 +391,8 @@ function buildApplyExpression() {
   // initial hydration this is intentionally a no-op; once the manager is
   // installed the same setters synchronously start or stop canvas rendering.
   let refreshVoxOscilloscopes = () => {};
+  let refreshComposerEffect = () => {};
+  let refreshSurfaceContext = () => {};
 
   const setStoredSelection = (value) => {
     try {
@@ -422,8 +418,13 @@ function buildApplyExpression() {
       return defaultSelection;
     }
   };
+  let surfaceRequested = false;
+  const isNativeDark = () => root.hasAttribute("data-theme")
+    ? root.getAttribute("data-theme") === "dark"
+    : root.matches(".dark, .electron-dark");
   const setSurfaceActive = (active, persist = true) => {
-    if (active) root.setAttribute("data-codex-surface-layout", activeValue);
+    surfaceRequested = Boolean(active);
+    if (surfaceRequested && isNativeDark()) root.setAttribute("data-codex-surface-layout", activeValue);
     else root.removeAttribute("data-codex-surface-layout");
     root.removeAttribute("data-codex-surface-theme");
     root.removeAttribute("data-codex-user-skin");
@@ -436,6 +437,67 @@ function buildApplyExpression() {
     root.removeAttribute("data-codex-user-skin-theme-state");
     if (persist) setStoredSelection(active ? activeValue : "official");
     refreshVoxOscilloscopes();
+    refreshComposerEffect();
+    refreshSurfaceContext();
+  };
+
+  const getComposerEffectEnabled = () => {
+    try { return localStorage.getItem(composerEffectEnabledStorageKey) !== "false"; }
+    catch { return true; }
+  };
+  const setComposerEffectEnabled = (enabled, persist = true) => {
+    const next = Boolean(enabled);
+    root.setAttribute("data-codex-composer-effect-enabled", String(next));
+    if (persist) { try { localStorage.setItem(composerEffectEnabledStorageKey, String(next)); } catch {} }
+    const button = document.querySelector("[data-codex-composer-effect-switch]");
+    if (button) {
+      button.setAttribute("aria-checked", String(next));
+      button.toggleAttribute("data-active", next);
+    }
+    refreshComposerEffect();
+    return next;
+  };
+
+  const getComposerEffect = () => {
+    try { return localStorage.getItem(composerEffectStorageKey) === "sparkles" ? "sparkles" : "runner"; }
+    catch { return "runner"; }
+  };
+  const setComposerEffect = (value, persist = true) => {
+    const nextValue = value === "sparkles" ? "sparkles" : "runner";
+    root.setAttribute("data-codex-composer-effect", nextValue);
+    if (persist) {
+      try { localStorage.setItem(composerEffectStorageKey, nextValue); } catch {}
+    }
+    for (const button of document.querySelectorAll('[data-codex-composer-effect-value]')) {
+      const selected = button.getAttribute("data-codex-composer-effect-value") === nextValue;
+      button.setAttribute("aria-checked", String(selected));
+      button.toggleAttribute("data-active", selected);
+    }
+    const colorInput = document.querySelector('[data-codex-composer-accent-input]');
+    if (colorInput) colorInput.disabled = nextValue !== "sparkles";
+    refreshComposerEffect();
+    return nextValue;
+  };
+
+  const getComposerAccent = () => {
+    try {
+      const value = localStorage.getItem(composerAccentStorageKey);
+      return /^#[0-9a-f]{6}$/i.test(value || "") ? value : "#38bdf8";
+    } catch { return "#38bdf8"; }
+  };
+  const setComposerAccent = (value, persist = true) => {
+    if (!/^#[0-9a-f]{6}$/i.test(value || "")) return null;
+    const nextValue = value.toLowerCase();
+    root.style.setProperty("--codex-composer-accent", nextValue);
+    if (persist) {
+      try { localStorage.setItem(composerAccentStorageKey, nextValue); } catch {}
+    }
+    const input = document.querySelector('[data-codex-composer-accent-input]');
+    if (input) {
+      input.value = nextValue;
+      input.title = "星光颜色 " + nextValue;
+    }
+    return nextValue;
   };
 
   const getAssistantIndicator = () => {
@@ -577,6 +639,9 @@ function buildApplyExpression() {
   setLiveActivityEnabled(getLiveActivityEnabled(), false);
   setLiveActivityAccent(getLiveActivityAccent(), false);
   setUsageGaugeMode(getUsageGaugeMode(), false);
+  setComposerEffectEnabled(getComposerEffectEnabled(), false);
+  setComposerEffect(getComposerEffect(), false);
+  setComposerAccent(getComposerAccent(), false);
 
   const timers = new Set();
   const schedule = (callback, delay) => {
@@ -663,6 +728,8 @@ function buildApplyExpression() {
   let onlineCoreActivityObserver = null;
   let onlineCoreObservedBody = null;
   let onlineCoreStateRefreshQueued = false;
+  let onlineCoreShellRefreshPending = false;
+  let onlineCoreActivityRefreshPending = false;
   let onlineCoreForcedState = null;
   let startupHydrationObserver = null;
   let startupHydrationRefreshQueued = false;
@@ -671,9 +738,13 @@ function buildApplyExpression() {
   const voxCanvasSelector = '[data-codex-vox-canvas="true"]';
   let voxAnimationFrame = 0;
   let voxLastFrameTime = 0;
+  let voxNextFrameTime = 0;
   let voxTime = 0;
   let voxPulsePhase = 0;
   const voxPaintedCanvases = new WeakSet();
+  const voxMountedCanvases = new Set();
+  const voxVisibleCanvases = new Set();
+  const voxCanvasMetrics = new WeakMap();
   const voxActiveFrameInterval = 1000 / 30;
   const voxIdleFrameInterval = 1000 / 15;
 
@@ -686,6 +757,34 @@ function buildApplyExpression() {
     if (rect.width <= 0 || rect.height <= 0) return false;
     const nodeStyle = getComputedStyle(node);
     return nodeStyle.display !== "none" && nodeStyle.visibility !== "hidden";
+  };
+  const voxCanvasResizeObserver = new ResizeObserver((entries) => {
+    for (const entry of entries) {
+      const { width, height } = entry.contentRect;
+      voxCanvasMetrics.set(entry.target, { width, height });
+    }
+  });
+  const voxCanvasVisibilityObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        voxVisibleCanvases.add(entry.target);
+        if (!document.hidden && isVoxSurfaceActive()) startVoxAnimation();
+      } else voxVisibleCanvases.delete(entry.target);
+    }
+  });
+  const registerVoxCanvas = (canvas) => {
+    if (voxMountedCanvases.has(canvas)) return;
+    voxMountedCanvases.add(canvas);
+    voxCanvasResizeObserver.observe(canvas);
+    voxCanvasVisibilityObserver.observe(canvas);
+    if (isVisibleVoxNode(canvas)) voxVisibleCanvases.add(canvas);
+  };
+  const unregisterVoxCanvas = (canvas) => {
+    if (!canvas) return;
+    voxMountedCanvases.delete(canvas);
+    voxVisibleCanvases.delete(canvas);
+    voxCanvasResizeObserver.unobserve(canvas);
+    voxCanvasVisibilityObserver.unobserve(canvas);
   };
   const findActiveVoxResponseHost = () => {
     const messages = [...document.querySelectorAll(
@@ -736,20 +835,28 @@ function buildApplyExpression() {
       container.appendChild(canvas);
       host.appendChild(container);
     }
-    host.setAttribute("data-codex-vox-host", locationName);
+    setNodeAttribute(host, "data-codex-vox-host", locationName);
+    const canvas = container.querySelector(voxCanvasSelector);
+    if (canvas) registerVoxCanvas(canvas);
     return container;
   };
   const removeVoxCanvasContainer = (container) => {
     const host = container.parentElement;
+    unregisterVoxCanvas(container.querySelector(voxCanvasSelector));
     container.remove();
     if (host && ![...host.children].some((child) => child.matches?.(voxCanvasContainerSelector))) {
       host.removeAttribute("data-codex-vox-host");
     }
   };
   const drawVoxCanvas = (canvas) => {
-    const rect = canvas.getBoundingClientRect();
-    const width = Math.max(1, rect.width);
-    const height = Math.max(1, rect.height);
+    let metrics = voxCanvasMetrics.get(canvas);
+    if (!metrics || metrics.width <= 0 || metrics.height <= 0) {
+      const rect = canvas.getBoundingClientRect();
+      metrics = { width: rect.width, height: rect.height };
+      voxCanvasMetrics.set(canvas, metrics);
+    }
+    const width = Math.max(1, metrics.width);
+    const height = Math.max(1, metrics.height);
     const pixelRatio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
     const bufferWidth = Math.max(1, Math.round(width * pixelRatio));
     const bufferHeight = Math.max(1, Math.round(height * pixelRatio));
@@ -772,9 +879,8 @@ function buildApplyExpression() {
       : 0.16 + breath * 0.08;
     const signalOpacity = activeSignal ? 1 : 0.44;
     const envelopeDenominator = Math.max(220, width * width * 0.0065);
-    const lightMode = root.classList.contains("electron-light") &&
-      !root.classList.contains("electron-dark") &&
-      !root.classList.contains("dark");
+    const lightMode = root.matches('[data-theme="light"], .electron-light') &&
+      !root.matches('[data-theme="dark"], .electron-dark, .dark');
     const baselineColor = lightMode
       ? "rgba(91, 33, 182, 0.24)"
       : "rgba(192, 132, 252, 0.2)";
@@ -817,7 +923,8 @@ function buildApplyExpression() {
       const transient = activeSignal
         ? Math.sin(distance * 1.18 - voxTime * 14) * 0.85
         : 0;
-      const microJitter = (Math.random() - 0.5) * 1.5;
+      // Keep fine electrical grain continuous between frames, not random jumps.
+      const microJitter = Math.sin(distance * 2.17 + voxTime * 3.3) * 0.75;
       const y = centerY +
         (fundamental + harmonic + transient + microJitter) * envelope * signalEnergy;
       if (!signalOpen) {
@@ -844,31 +951,45 @@ function buildApplyExpression() {
     if (voxAnimationFrame) cancelAnimationFrame(voxAnimationFrame);
     voxAnimationFrame = 0;
     voxLastFrameTime = 0;
+    voxNextFrameTime = 0;
     root.removeAttribute("data-codex-vox-running");
   };
   const renderVoxOscilloscopes = (frameTime = performance.now()) => {
     voxAnimationFrame = 0;
-    if (!isVoxSurfaceActive()) {
+    if (document.hidden || !isVoxSurfaceActive()) {
       stopVoxAnimation();
       return;
     }
     const activeSignal = root.getAttribute("data-codex-online-core-state") === "active";
-    const frameInterval = activeSignal ? voxActiveFrameInterval : voxIdleFrameInterval;
+    const frameInterval = activeSignal && isVoxSurfaceActive() ? voxActiveFrameInterval : voxIdleFrameInterval;
     const elapsed = voxLastFrameTime ? frameTime - voxLastFrameTime : frameInterval;
-    if (voxLastFrameTime && elapsed + 0.75 < frameInterval) {
+    if (voxNextFrameTime && frameTime + 0.75 < voxNextFrameTime) {
       voxAnimationFrame = requestAnimationFrame(renderVoxOscilloscopes);
       return;
     }
-    const canvases = [...document.querySelectorAll(voxCanvasSelector)].filter(isVisibleVoxNode);
+    const canvases = isVoxSurfaceActive()
+      ? [...voxMountedCanvases].filter((canvas) => {
+        if (!canvas.isConnected) {
+          unregisterVoxCanvas(canvas);
+          return false;
+        }
+        return voxVisibleCanvases.has(canvas);
+      }) : [];
     if (canvases.length === 0) {
       stopVoxAnimation();
       return;
     }
     const activityScale = activeSignal ? 1 : 0.32;
-    const elapsedFrameScale = Math.min(6, Math.max(1, elapsed / (1000 / 60)));
+    // Preserve the deadline remainder on 60/90/120/144 Hz displays. Dropped
+    // frames never create catch-up bursts or a large jump in the wave phase.
+    const motionElapsed = Math.min(elapsed, frameInterval * 1.5);
+    voxNextFrameTime = (voxNextFrameTime || frameTime) + frameInterval;
+    if (voxNextFrameTime < frameTime) voxNextFrameTime = frameTime + frameInterval;
     voxLastFrameTime = frameTime;
-    voxTime += 0.15 * activityScale * elapsedFrameScale;
-    voxPulsePhase += 0.025 * activityScale * elapsedFrameScale;
+    // At 30fps the old upper harmonic advanced 4.2 radians per frame, above
+    // Nyquist. Keep the waveform and energy, but make its motion continuous.
+    voxTime += 2.4 * activityScale * motionElapsed / 1000;
+    voxPulsePhase += 1.5 * activityScale * motionElapsed / 1000;
     for (const canvas of canvases) {
       drawVoxCanvas(canvas);
       voxPaintedCanvases.add(canvas);
@@ -876,8 +997,9 @@ function buildApplyExpression() {
     voxAnimationFrame = requestAnimationFrame(renderVoxOscilloscopes);
   };
   const startVoxAnimation = () => {
+    if (isVoxSurfaceActive()) setNodeAttribute(root, "data-codex-vox-running", "true");
+    else root.removeAttribute("data-codex-vox-running");
     if (voxAnimationFrame) return;
-    root.setAttribute("data-codex-vox-running", "true");
     voxAnimationFrame = requestAnimationFrame(renderVoxOscilloscopes);
   };
   refreshVoxOscilloscopes = () => {
@@ -912,7 +1034,7 @@ function buildApplyExpression() {
         voxPaintedCanvases.add(canvas);
       }
     }
-    if (keep.size > 0) startVoxAnimation();
+    if (!document.hidden && keep.size > 0) startVoxAnimation();
     else stopVoxAnimation();
     return keep.size;
   };
@@ -921,6 +1043,10 @@ function buildApplyExpression() {
     for (const container of document.querySelectorAll(voxCanvasContainerSelector)) {
       removeVoxCanvasContainer(container);
     }
+    voxCanvasResizeObserver.disconnect();
+    voxCanvasVisibilityObserver.disconnect();
+    voxMountedCanvases.clear();
+    voxVisibleCanvases.clear();
   };
 
   const closeProjectColorPopover = () => {
@@ -1214,7 +1340,14 @@ function buildApplyExpression() {
     if (!sidebar || sidebar === projectColorObservedSidebar) return;
     projectColorObserver?.disconnect();
     projectColorObservedSidebar = sidebar;
-    projectColorObserver = new MutationObserver(queueProjectColorRefresh);
+    projectColorObserver = new MutationObserver((records) => {
+      // The activity footer now lives inside the observed directory. Its
+      // text/canvas updates must not reapply every project or read status again.
+      const ownedWidget = '[data-codex-live-activity], [data-codex-online-core], [data-codex-usage-gauge]';
+      if (records.some((record) => !record.target.closest?.(ownedWidget))) {
+        queueProjectColorRefresh();
+      }
+    });
     projectColorObserver.observe(sidebar, { childList: true, subtree: true });
   };
   const mountProjectColors = () => {
@@ -1237,43 +1370,103 @@ function buildApplyExpression() {
     });
   const refreshOnlineCoreState = () => {
     const nextState = onlineCoreForcedState || (hasVisibleOnlineCoreActivity() ? "active" : "idle");
-    root.setAttribute("data-codex-online-core-state", nextState);
-    document.querySelector(onlineCoreSelector)?.setAttribute("data-online-state", nextState);
-    return nextState;
+    const core = document.querySelector(onlineCoreSelector);
+    const changed = root.getAttribute("data-codex-online-core-state") !== nextState ||
+      core?.getAttribute("data-online-state") !== nextState;
+    setNodeAttribute(root, "data-codex-online-core-state", nextState);
+    setNodeAttribute(core, "data-online-state", nextState);
+    return { state: nextState, changed };
   };
-  const queueOnlineCoreStateRefresh = () => {
+  const nodeMatchesOrContains = (node, selector) => node instanceof Element &&
+    (node.matches(selector) || Boolean(node.querySelector(selector)));
+  const hasStopLabel = (value) => /(?:stop|停止)/i.test(String(value || ""));
+  const isComposerStopMutation = (record, node, label = node?.getAttribute?.("aria-label")) =>
+    node instanceof Element && node.matches("button") && hasStopLabel(label) &&
+    Boolean(node.closest('[data-composer-surface-variant]') ||
+      record.target?.closest?.('[data-composer-surface-variant]'));
+  const onlineCoreMutationNeedsRefresh = (records) => {
+    let shellChanged = false;
+    let activityChanged = false;
+    for (const record of records) {
+      if (record.type === "attributes") {
+        // Attribute records contain the post-change DOM.  Test the stable
+        // message type as well, so removing data-markdown-animated at the end
+        // of a streamed response still returns Online Core to idle.
+        if (record.attributeName === "data-markdown-animated" &&
+          record.target.matches?.('[data-markdown-text-style="assistant-message"]')) {
+          activityChanged = true;
+        }
+        if (record.attributeName === "aria-label" &&
+          (isComposerStopMutation(record, record.target) ||
+            isComposerStopMutation(record, record.target, record.oldValue))) {
+          activityChanged = true;
+        }
+        continue;
+      }
+      for (const node of [...record.addedNodes, ...record.removedNodes]) {
+        if (nodeMatchesOrContains(node, ".app-shell-left-panel")) shellChanged = true;
+        if (nodeMatchesOrContains(node, onlineCoreActivitySelector)) activityChanged = true;
+        if (isComposerStopMutation(record, node)) activityChanged = true;
+      }
+    }
+    // React can replace the sidebar without retaining its former subtree in a
+    // mutation record.  Only reconcile in that case; streamed text alone does
+    // not require a shell remount.
+    if (!document.querySelector(onlineCoreSelector)) shellChanged = true;
+    return { shellChanged, activityChanged };
+  };
+  const queueOnlineCoreStateRefresh = (changes = { shellChanged: false, activityChanged: true }) => {
+    if (!changes.shellChanged && !changes.activityChanged) return;
+    onlineCoreShellRefreshPending ||= changes.shellChanged;
+    onlineCoreActivityRefreshPending ||= changes.activityChanged;
     if (onlineCoreStateRefreshQueued) return;
     onlineCoreStateRefreshQueued = true;
     schedule(() => {
       onlineCoreStateRefreshQueued = false;
-      reconcileDynamicShell();
-      refreshOnlineCoreState();
-      refreshVoxOscilloscopes();
-      queueStatusWidgetRefresh();
+      const shellChanged = onlineCoreShellRefreshPending;
+      const activityChanged = onlineCoreActivityRefreshPending;
+      onlineCoreShellRefreshPending = false;
+      onlineCoreActivityRefreshPending = false;
+      if (shellChanged) reconcileDynamicShell();
+      const onlineState = refreshOnlineCoreState();
+      if (shellChanged || activityChanged || onlineState.changed) {
+        refreshVoxOscilloscopes();
+      }
+      if (onlineState.changed || (activityChanged && getLiveActivityEnabled())) queueStatusWidgetRefresh();
     }, 32);
   };
   const ensureOnlineCoreActivityObserver = () => {
     if (!document.body || document.body === onlineCoreObservedBody) return;
     onlineCoreActivityObserver?.disconnect();
     onlineCoreObservedBody = document.body;
-    onlineCoreActivityObserver = new MutationObserver(queueOnlineCoreStateRefresh);
+    onlineCoreActivityObserver = new MutationObserver((records) => {
+      queueOnlineCoreStateRefresh(onlineCoreMutationNeedsRefresh(records));
+    });
     onlineCoreActivityObserver.observe(document.body, {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ["data-markdown-animated"],
+      attributeOldValue: true,
+      attributeFilter: ["data-markdown-animated", "aria-label"],
     });
   };
   const findSidebarTopRow = () => {
     const sidebar = document.querySelector(".app-shell-left-panel");
     if (!sidebar) return null;
+    // The new sidebar labels this switch ChatGPT / Codex and wraps it in a
+    // display:contents span. Mount alongside that wrapper, not inside it.
+    const modeSwitch = sidebar.querySelector(
+      'button[aria-label^="切换模式"], button[aria-label^="Switch mode"]',
+    );
     const codexLabel = [...sidebar.querySelectorAll("span")].find(
       (node) => node.children.length === 0 && node.textContent?.trim() === "Codex",
     );
-    const modeButton = codexLabel?.closest("button");
-    const row = modeButton?.parentElement;
+    const modeButton = modeSwitch || codexLabel?.closest("button");
+    const row = modeButton?.closest('[class~="@container/navigation-header"]') || modeButton?.parentElement;
     if (!modeButton || !row || !sidebar.contains(row)) return null;
-    return { sidebar, row, modeButton };
+    let anchor = modeButton;
+    while (anchor.parentElement !== row) anchor = anchor.parentElement;
+    return { sidebar, row, anchor };
   };
   const mountOnlineCore = () => {
     const target = findSidebarTopRow();
@@ -1291,8 +1484,8 @@ function buildApplyExpression() {
       core.append(rail, runner);
     }
 
-    if (core.parentElement !== target.row || core.previousElementSibling !== target.modeButton) {
-      target.modeButton.insertAdjacentElement("afterend", core);
+    if (core.parentElement !== target.row || core.previousElementSibling !== target.anchor) {
+      target.anchor.insertAdjacentElement("afterend", core);
     }
     ensureOnlineCoreActivityObserver();
     refreshOnlineCoreState();
@@ -1309,7 +1502,7 @@ function buildApplyExpression() {
   };
   const setOnlineCoreState = (value = "auto") => {
     onlineCoreForcedState = value === "active" || value === "idle" ? value : null;
-    const nextState = refreshOnlineCoreState();
+    const { state: nextState } = refreshOnlineCoreState();
     refreshVoxOscilloscopes();
     return nextState;
   };
@@ -1497,6 +1690,7 @@ function buildApplyExpression() {
     const wrapper = indicator.parentElement;
     return wrapper && composer.contains(wrapper) ? wrapper : indicator;
   };
+  const nativeContextAttributes = new WeakMap();
   const cleanupContextWidget = (widget) => {
     if (!(widget instanceof Element)) return;
     const handlers = widget.__codexContextHandlers;
@@ -1506,17 +1700,21 @@ function buildApplyExpression() {
       delete widget.__codexContextHandlers;
     }
     widget.removeAttribute("data-codex-context-widget");
-    widget.removeAttribute("role");
-    widget.removeAttribute("tabindex");
-    widget.removeAttribute("aria-haspopup");
-    widget.removeAttribute("title");
+    for (const [name, value] of nativeContextAttributes.get(widget) || []) {
+      if (value === null) widget.removeAttribute(name);
+      else widget.setAttribute(name, value);
+    }
+    nativeContextAttributes.delete(widget);
   };
   const mountContextWidget = () => {
-    const nativeWidget = findComposerContextWidget();
+    const nativeWidget = root.getAttribute("data-codex-surface-layout") === activeValue
+      ? findComposerContextWidget() : null;
     for (const widget of document.querySelectorAll(contextWidgetSelector)) {
       if (widget !== nativeWidget) cleanupContextWidget(widget);
     }
     if (!nativeWidget) return null;
+    if (!nativeContextAttributes.has(nativeWidget)) nativeContextAttributes.set(nativeWidget,
+      ["role", "tabindex", "aria-haspopup", "title", "aria-label"].map(name => [name, nativeWidget.getAttribute(name)]));
     setNodeAttribute(nativeWidget, "data-codex-context-widget", "true");
     setNodeAttribute(nativeWidget, "role", "button");
     setNodeAttribute(nativeWidget, "tabindex", "0");
@@ -1576,6 +1774,11 @@ function buildApplyExpression() {
     return true;
   };
 
+  refreshSurfaceContext = () => {
+    refreshContextWidget();
+    if (root.getAttribute("data-codex-surface-layout") !== activeValue) closeContextAccentPopover();
+  };
+
   const findRateLimitQueryClient = () => {
     if (
       rateLimitQueryClientCache &&
@@ -1619,6 +1822,30 @@ function buildApplyExpression() {
       if (current.sibling) stack.push(current.sibling);
     }
     return null;
+  };
+  const syncCustomMessagePalette = () => {
+    const settings = findRateLimitQueryClient()
+      ?.getQueryData(["vscode", "get-settings"])?.values;
+    for (const theme of ["dark"]) {
+      const palette = settings?.appearanceDarkChromeTheme;
+      const custom = palette?.accentSource === "custom";
+      toggleNodeAttribute(root, "data-codex-custom-message-" + theme, custom);
+      const accentKey = "--codex-custom-message-accent-" + theme;
+      const inkKey = "--codex-custom-message-ink-" + theme;
+      if (!custom || !/^#[0-9a-f]{6}$/i.test(palette.accent || "")) {
+        root.style.removeProperty(accentKey);
+        root.style.removeProperty(inkKey);
+        continue;
+      }
+      const channels = [1, 3, 5].map(offset => {
+        const value = parseInt(palette.accent.slice(offset, offset + 2), 16) / 255;
+        return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+      });
+      const luminance = channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+      const ink = luminance > 0.179 ? "#000000" : "#ffffff";
+      if (root.style.getPropertyValue(accentKey) !== palette.accent) root.style.setProperty(accentKey, palette.accent);
+      if (root.style.getPropertyValue(inkKey) !== ink) root.style.setProperty(inkKey, ink);
+    }
   };
   const normalizeRateLimitBucket = (bucket) => {
     if (!bucket || typeof bucket !== "object") return null;
@@ -1847,9 +2074,17 @@ function buildApplyExpression() {
     if (!profile || !host) return null;
     let gauge = document.querySelector(usageGaugeSelector);
     if (!gauge) gauge = createUsageGauge();
-    if (gauge.parentElement !== host || gauge.previousElementSibling !== profile) {
+    const rail = profile.closest('[data-app-navigation-rail="true"]');
+    if (rail) {
+      // A separate bottom rail item leaves the native avatar's full 36px slot.
+      let footer = profile;
+      while (footer.parentElement !== rail) footer = footer.parentElement;
+      if (gauge.parentElement !== rail || gauge.nextElementSibling !== footer)
+        rail.insertBefore(gauge, footer);
+    } else if (gauge.parentElement !== host || gauge.previousElementSibling !== profile) {
       profile.insertAdjacentElement("afterend", gauge);
     }
+    setNodeAttribute(gauge, "data-placement", rail ? "navigation-rail" : "profile-row");
     setNodeAttribute(gauge, "data-mode", mode);
     return gauge;
   };
@@ -1920,11 +2155,11 @@ function buildApplyExpression() {
     const effortLabel = (value) => {
       const normalized = String(value || "").trim().toLowerCase().replace(/\\s+effort$/, "");
       return ({
-        "轻度": "L",
-        "low": "L",
-        "中": "M",
-        "mid": "M",
-        "medium": "M",
+        "轻度": "LOW",
+        "low": "LOW",
+        "中": "MID",
+        "mid": "MID",
+        "medium": "MID",
         "高": "H",
         "high": "H",
         "极高": "XH",
@@ -2215,7 +2450,11 @@ function buildApplyExpression() {
     if (!sidebar) return null;
     let widget = document.querySelector(liveActivitySelector);
     if (!widget) widget = createLiveActivityWidget();
-    if (widget.parentElement !== sidebar) sidebar.appendChild(widget);
+    // The directory column is separate from the new app navigation rail.
+    // A flex footer reserves space instead of covering scrollable project rows.
+    const host = sidebar.querySelector(".sidebar-navigation") || sidebar;
+    if (widget.parentElement !== host) host.appendChild(widget);
+    setNodeAttribute(widget, "data-placement", host === sidebar ? "sidebar-overlay" : "sidebar-footer");
     const header = widget.querySelector('[data-codex-live-header="true"]');
     const state = header?.querySelector('[data-codex-live-state-label="true"]');
     const title = header?.querySelector('[data-codex-live-title="true"]');
@@ -2241,8 +2480,8 @@ function buildApplyExpression() {
       // created a refresh loop and made the other indicator animations stutter.
       if (!orderReady) header.append(state, title, collapseToggle);
     }
-    const sidebarRect = sidebar.getBoundingClientRect();
-    toggleNodeAttribute(widget, "data-compact", sidebarRect.width < 300 || sidebarRect.height < 620);
+    const hostRect = host.getBoundingClientRect();
+    toggleNodeAttribute(widget, "data-compact", host === sidebar && (hostRect.width < 300 || hostRect.height < 620));
     removeNodeAttribute(widget, "data-auto-condensed");
     return widget;
   };
@@ -2379,11 +2618,60 @@ function buildApplyExpression() {
     refreshLiveActivity();
     return root.getAttribute("data-codex-live-activity-source");
   };
-  const refreshStatusWidgets = () => {
+  let composerSparkles = null;
+  let composerSparklesVisible = false;
+  const syncComposerMotion = () => {
+    if (composerSparkles) setNodeAttribute(composerSparkles, "data-running",
+      String(composerSparklesVisible && !document.hidden));
+  };
+  const composerVisibilityObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.target === composerSparkles) composerSparklesVisible = entry.isIntersecting;
+    }
+    syncComposerMotion();
+  });
+  const clearComposerSparkles = () => {
+    composerVisibilityObserver.disconnect();
+    composerSparkles?.remove();
+    composerSparkles = null;
+    composerSparklesVisible = false;
+  };
+  refreshComposerEffect = () => {
+    const active = root.getAttribute("data-codex-surface-layout") === activeValue &&
+      root.getAttribute("data-codex-composer-effect-enabled") !== "false" &&
+      root.getAttribute("data-codex-composer-effect") === "sparkles";
+    const host = active ? document.querySelector("[data-composer-surface-variant]")?.parentElement : null;
+    if (!host) { clearComposerSparkles(); return; }
+    if (composerSparkles?.parentElement === host) return;
+    clearComposerSparkles();
+    const layer = document.createElement("div");
+    layer.setAttribute("data-codex-composer-sparkles", "true");
+    layer.setAttribute("aria-hidden", "true");
+    layer.setAttribute("data-running", "false");
+    // A bounded decorative strip. Only transform/opacity animate; no canvas,
+    // particle library, per-frame JS, or extra background heartbeat is needed.
+    for (let index = 0; index < 56; index += 1) {
+      const star = document.createElement("span");
+      star.style.left = (9 + ((index * 61) % 83)) + "%";
+      star.style.top = (3 + ((index * 17) % 16)) + "px";
+      star.style.setProperty("--sparkle-size", (0.8 + (index % 4) * 0.25) + "px");
+      star.style.setProperty("--sparkle-duration", (2.2 + ((index * 7) % 19) / 10) + "s");
+      star.style.setProperty("--sparkle-delay", (-index * 0.391) + "s");
+      layer.appendChild(star);
+    }
+    host.appendChild(layer);
+    composerSparkles = layer;
+    composerVisibilityObserver.observe(layer);
+  };
+  document.addEventListener("visibilitychange", syncComposerMotion);
+
+  const refreshStatusWidgets = ({ includeLiveActivity = true } = {}) => {
     statusWidgetLastRefreshAt = performance.now();
+    syncCustomMessagePalette();
+    refreshComposerEffect();
     document.querySelector('[data-codex-footer-telemetry="true"]')?.remove();
     const contextMounted = refreshContextWidget();
-    const activityMounted = refreshLiveActivity();
+    const activityMounted = includeLiveActivity ? refreshLiveActivity() : false;
     const usageMounted = refreshUsageGauge();
     return contextMounted || activityMounted || usageMounted;
   };
@@ -2402,7 +2690,9 @@ function buildApplyExpression() {
       if (!statusWidgetLoopActive) return;
       try {
         reconcileDynamicShell();
-        refreshStatusWidgets();
+        // When the optional task card is off, omit its refresh work from the
+        // heartbeat entirely; its disabled branch otherwise has nothing to do.
+        refreshStatusWidgets({ includeLiveActivity: getLiveActivityEnabled() });
       } finally {
         if (statusWidgetLoopActive) scheduleStatusWidgetHeartbeat();
       }
@@ -2412,7 +2702,10 @@ function buildApplyExpression() {
   const startupHydrationReady = () => {
     const sidebar = document.querySelector(".app-shell-left-panel");
     const projectRows = [...document.querySelectorAll(projectRowSelector)];
-    const projectIconsReady = projectRows.length > 0 && projectRows.every((row) =>
+    // ChatGPT projects now share this sidebar but keep their native icons.
+    // Only local projects with a replaceable icon slot require our SVG.
+    const projectIconsReady = projectRows.every((row) =>
+      !row.querySelector('[data-sidebar-project-drop-zone="project-icon"]') ||
       Boolean(row.querySelector("[" + projectIconAttribute + "]")),
     );
     return Boolean(
@@ -2464,11 +2757,8 @@ function buildApplyExpression() {
     const input = document.querySelector('input[name="appearance-theme"]');
     return input?.closest('[role="radiogroup"]') || null;
   };
-  const isLightThemeInput = (input) => /^(\u6d45\u8272|Light)$/i.test(input?.getAttribute("aria-label") || "");
-  let nativeSelectionReconciled = false;
-
   const syncSurfaceControl = (control) => {
-    const active = root.getAttribute("data-codex-surface-layout") === activeValue;
+    const active = surfaceRequested;
     for (const button of control.querySelectorAll('[data-codex-surface-layout-value]')) {
       const selected = (button.getAttribute("data-codex-surface-layout-value") === activeValue) === active;
       button.setAttribute("aria-checked", selected ? "true" : "false");
@@ -2486,7 +2776,7 @@ function buildApplyExpression() {
       const selected = button.getAttribute("data-codex-assistant-indicator-value") === selectedValue;
       button.setAttribute("aria-checked", selected ? "true" : "false");
       button.toggleAttribute("data-active", selected);
-      // The four visual styles are shared by the response rail and Online
+      // The visual styles are shared by the response rail and Online
       // Core, so they stay editable when either visibility switch is off.
       button.disabled = false;
       button.setAttribute("aria-disabled", "false");
@@ -2555,7 +2845,7 @@ function buildApplyExpression() {
       title.textContent = "Assistant \u72b6\u6001\u6761";
       const description = document.createElement("div");
       description.setAttribute("data-codex-assistant-indicator-description", "true");
-      description.textContent = "\u53f3\u4fa7\u5f00\u5173\u53ea\u63a7\u5236\u56de\u590d\u9876\u90e8\u52a8\u6001\uff1b\u56db\u79cd\u6837\u5f0f\u4e0e\u5de6\u4e0a\u89d2\u5728\u7ebf\u706f\u5171\u7528\u3002";
+      description.textContent = "\u53f3\u4fa7\u5f00\u5173\u53ea\u63a7\u5236\u56de\u590d\u9876\u90e8\u52a8\u6001\uff1b\u6837\u5f0f\u4e0e\u5de6\u4e0a\u89d2\u5728\u7ebf\u706f\u5171\u7528\u3002";
       copy.append(title, description);
 
       const options = document.createElement("div");
@@ -2660,7 +2950,7 @@ function buildApplyExpression() {
       title.textContent = "LIVE ACTIVITY";
       const description = document.createElement("div");
       description.setAttribute("data-codex-live-activity-control-description", "true");
-      description.textContent = "\u5728\u4fa7\u680f\u663e\u793a\u5f53\u524d\u4efb\u52a1\u3001\u5de5\u5177\u4e0e Agent\uff1b\u914d\u8272\u53ea\u5f71\u54cd\u7ec6\u8fb9\u548c\u72b6\u6001\u70b9\u3002";
+      description.textContent = "\u5728\u4fa7\u680f\u663e\u793a\u5f53\u524d\u4efb\u52a1\u3001\u5de5\u5177\u4e0e Agent\uff1b\u914d\u8272\u53ea\u5f71\u54cd\u7ec6\u8fb9\u3001\u8fdb\u5ea6\u548c\u72b6\u6001\u70b9\u3002";
       copy.append(title, description);
 
       const actions = document.createElement("div");
@@ -2722,7 +3012,7 @@ function buildApplyExpression() {
       title.textContent = "额度仪表";
       const description = document.createElement("div");
       description.setAttribute("data-codex-usage-gauge-control-description", "true");
-      description.textContent = "读取 Codex 原生用量缓存；状态档只显示电量格，点击后再显示精确百分比。";
+      description.textContent = "显示在左侧导航栏底部的独立位置；读取原生用量，点击查看详情。";
       copy.append(title, description);
 
       const options = document.createElement("div");
@@ -2752,35 +3042,83 @@ function buildApplyExpression() {
     return true;
   };
 
+  const mountComposerEffectControl = (previousControl) => {
+    if (!previousControl?.isConnected) return false;
+    let control = document.querySelector('[data-codex-composer-effect-control="true"]');
+    if (!control) {
+      control = document.createElement("div");
+      control.setAttribute("data-codex-composer-effect-control", "true");
+      const copy = document.createElement("div");
+      copy.setAttribute("data-codex-composer-effect-copy", "true");
+      const title = document.createElement("div");
+      title.setAttribute("data-codex-composer-effect-title", "true");
+      title.textContent = "输入框彩条";
+      const description = document.createElement("div");
+      description.setAttribute("data-codex-composer-effect-description", "true");
+      description.textContent = "独立开启或关闭彩条；关闭后保留样式与星光颜色。";
+      copy.append(title, description);
+      const options = document.createElement("div");
+      options.setAttribute("data-codex-composer-effect-options", "true");
+      options.setAttribute("role", "radiogroup");
+      options.setAttribute("aria-label", "输入框彩条");
+      for (const [value, label] of [["runner", "流光边框"], ["sparkles", "星光粒子"]]) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.setAttribute("role", "radio");
+        button.setAttribute("data-codex-composer-effect-value", value);
+        button.textContent = label;
+        button.addEventListener("click", () => setComposerEffect(value, true));
+        options.appendChild(button);
+      }
+      const actions = document.createElement("div");
+      actions.setAttribute("data-codex-composer-effect-actions", "true");
+      const colorLabel = document.createElement("label");
+      colorLabel.setAttribute("data-codex-composer-accent-label", "true");
+      colorLabel.textContent = "星光颜色";
+      const colorInput = document.createElement("input");
+      colorInput.type = "color";
+      colorInput.setAttribute("data-codex-composer-accent-input", "true");
+      colorInput.setAttribute("aria-label", "星光颜色");
+      colorInput.addEventListener("input", () => setComposerAccent(colorInput.value, true));
+      colorInput.addEventListener("change", () => setComposerAccent(colorInput.value, true));
+      colorLabel.appendChild(colorInput);
+      const switchButton = document.createElement("button");
+      switchButton.type = "button";
+      switchButton.setAttribute("role", "switch");
+      switchButton.setAttribute("aria-label", "启用输入框彩条");
+      switchButton.setAttribute("data-codex-composer-effect-switch", "true");
+      const knob = document.createElement("span");
+      knob.setAttribute("data-codex-composer-effect-knob", "true");
+      switchButton.appendChild(knob);
+      switchButton.addEventListener("click", () =>
+        setComposerEffectEnabled(root.getAttribute("data-codex-composer-effect-enabled") === "false", true));
+      actions.append(options, colorLabel, switchButton);
+      control.append(copy, actions);
+    }
+    if (control.previousElementSibling !== previousControl) previousControl.insertAdjacentElement("afterend", control);
+    setComposerEffectEnabled(root.getAttribute("data-codex-composer-effect-enabled") !== "false", false);
+    setComposerEffect(root.getAttribute("data-codex-composer-effect"), false);
+    setComposerAccent(root.style.getPropertyValue("--codex-composer-accent") || getComposerAccent(), false);
+    return true;
+  };
+
   const mountSurfaceControl = () => {
     const group = themeGroup();
     if (!group) return false;
     group.querySelector('[data-codex-surface-theme-card="true"]')?.remove();
     group.removeAttribute("data-codex-surface-theme-group");
 
-    const nativeInputs = [...group.querySelectorAll('input[name="appearance-theme"]')];
-    if (legacySurfaceWasActive && !nativeSelectionReconciled) {
-      nativeSelectionReconciled = true;
-      const selectedInput = nativeInputs.find((input) => input.checked);
-      if (!selectedInput) {
-        nativeInputs.find(isLightThemeInput)?.click();
-      } else {
-        const selectedLabel = selectedInput.getAttribute("aria-label") || "";
-        const selectedIsDark = /^(\u6df1\u8272|Dark)$/i.test(selectedLabel);
-        const selectedIsLight = /^(\u6d45\u8272|Light)$/i.test(selectedLabel);
-        const rootIsDark = root.classList.contains("dark") || root.classList.contains("electron-dark");
-        const selectionAndRootDisagree =
-          (selectedIsDark && !rootIsDark) || (selectedIsLight && rootIsDark);
-        if (selectionAndRootDisagree) {
-          nativeInputs.find((input) => input !== selectedInput)?.click();
-          schedule(() => {
-            const freshInput = [...(themeGroup()?.querySelectorAll('input[name="appearance-theme"]') || [])]
-              .find((input) => input.getAttribute("aria-label") === selectedLabel);
-            freshInput?.click();
-          }, 80);
-        }
-      }
+    // Native Mode now lives in a horizontal settings row. Keep our controls
+    // outside that row, in one owned section below the native Mode card.
+    const modeRow = group.closest('[class~="@container/settings-row"]');
+    const anchor = modeRow?.parentElement || group;
+    let section = document.querySelector('[data-codex-appearance-controls="true"]');
+    if (!section) {
+      section = document.createElement("section");
+      section.setAttribute("data-codex-appearance-controls", "true");
+      section.setAttribute("aria-label", "Surface 外观");
     }
+    if (section.previousElementSibling !== anchor) anchor.insertAdjacentElement("afterend", section);
 
     let control = document.querySelector('[data-codex-surface-layout-control="true"]');
     if (!control) {
@@ -2794,7 +3132,7 @@ function buildApplyExpression() {
       title.textContent = "Surface \u7ed3\u6784";
       const description = document.createElement("div");
       description.setAttribute("data-codex-surface-layout-description", "true");
-      description.textContent = "\u4fdd\u7559\u60ac\u6d6e\u9762\u677f\u4e0e\u8f93\u5165\u6846\uff1bAssistant \u56de\u590d\u4fdd\u6301\u65e0\u5361\u7247\u3002";
+      description.textContent = "仅深色生效；浅色使用原版。保留悬浮面板与输入框，回复保持无卡片。";
       copy.append(title, description);
 
       const options = document.createElement("div");
@@ -2816,9 +3154,7 @@ function buildApplyExpression() {
       control.append(copy, options);
     }
 
-    if (control.previousElementSibling !== group) {
-      group.insertAdjacentElement("afterend", control);
-    }
+    if (control.parentElement !== section) section.prepend(control);
     syncSurfaceControl(control);
     mountAssistantIndicatorControl(control);
     mountOnlineCoreControl(
@@ -2829,6 +3165,9 @@ function buildApplyExpression() {
     );
     mountUsageGaugeControl(
       document.querySelector('[data-codex-live-activity-control="true"]'),
+    );
+    mountComposerEffectControl(
+      document.querySelector('[data-codex-usage-gauge-control="true"]'),
     );
     return true;
   };
@@ -2904,6 +3243,15 @@ function buildApplyExpression() {
   document.addEventListener("scroll", onProjectViewportChange, true);
   window.addEventListener("resize", onProjectViewportChange, true);
   const controller = {
+    setComposerAccent(value, persist = true) {
+      return setComposerAccent(value, persist);
+    },
+    setComposerEffectEnabled(enabled, persist = true) {
+      return setComposerEffectEnabled(enabled, persist);
+    },
+    setComposerEffect(value, persist = true) {
+      return setComposerEffect(value, persist);
+    },
     mount() {
       const surfaceMounted = mountSurfaceControl();
       mountProjectColors();
@@ -2983,6 +3331,13 @@ function buildApplyExpression() {
       return nextValue;
     },
     destroy() {
+      nativeThemeObserver.disconnect();
+      document.removeEventListener("visibilitychange", syncComposerMotion);
+      clearComposerSparkles();
+      root.removeAttribute("data-codex-composer-effect");
+      root.removeAttribute("data-codex-composer-effect-enabled");
+      root.style.removeProperty("--codex-composer-accent");
+      document.querySelector('[data-codex-composer-effect-control="true"]')?.remove();
       document.removeEventListener("change", onDocumentChange, true);
       document.removeEventListener("click", onDocumentClick, true);
       document.removeEventListener("keydown", onDocumentKeyDown, true);
@@ -2997,6 +3352,8 @@ function buildApplyExpression() {
       onlineCoreActivityObserver?.disconnect();
       onlineCoreActivityObserver = null;
       onlineCoreObservedBody = null;
+      onlineCoreShellRefreshPending = false;
+      onlineCoreActivityRefreshPending = false;
       startupHydrationStopped = true;
       startupHydrationObserver?.disconnect();
       startupHydrationObserver = null;
@@ -3051,18 +3408,30 @@ function buildApplyExpression() {
       root.removeAttribute("data-codex-usage-source");
       root.removeAttribute("data-codex-usage-remaining");
       root.removeAttribute("data-codex-startup-sync");
+      root.removeAttribute("data-codex-custom-message-dark");
+      for (const theme of ["dark"]) {
+        root.style.removeProperty("--codex-custom-message-accent-" + theme);
+        root.style.removeProperty("--codex-custom-message-ink-" + theme);
+      }
       document.querySelector('[data-codex-surface-layout-control="true"]')?.remove();
       document.querySelector('[data-codex-assistant-indicator-control="true"]')?.remove();
       document.querySelector('[data-codex-online-core-control="true"]')?.remove();
       document.querySelector('[data-codex-live-activity-control="true"]')?.remove();
       document.querySelector('[data-codex-usage-gauge-control="true"]')?.remove();
       document.querySelector('[data-codex-assistant-placement-control="true"]')?.remove();
+      document.querySelector('[data-codex-appearance-controls="true"]')?.remove();
       document.querySelector('[data-codex-surface-theme-card="true"]')?.remove();
       document.querySelector('[data-codex-surface-theme-group="true"]')?.removeAttribute("data-codex-surface-theme-group");
       delete globalThis[controllerKey];
       delete globalThis[legacyControllerKey];
     },
   };
+  const nativeThemeObserver = new MutationObserver(() => {
+    setSurfaceActive(surfaceRequested, false);
+    const control = document.querySelector('[data-codex-surface-layout-control="true"]');
+    if (control) syncSurfaceControl(control);
+  });
+  nativeThemeObserver.observe(root, { attributes: true, attributeFilter: ["data-theme", "class"] });
   globalThis[controllerKey] = controller;
   globalThis[legacyControllerKey] = controller;
   ensureStartupHydrationObserver();
@@ -3149,6 +3518,16 @@ const removeExpression = `(() => {
     } catch {}
   }
   root.removeAttribute("data-codex-surface-layout");
+  root.removeAttribute("data-codex-composer-effect");
+  root.removeAttribute("data-codex-composer-effect-enabled");
+  root.style.removeProperty("--codex-composer-accent");
+  document.querySelector('[data-codex-composer-sparkles="true"]')?.remove();
+  document.querySelector('[data-codex-composer-effect-control="true"]')?.remove();
+  root.removeAttribute("data-codex-custom-message-dark");
+  for (const theme of ["dark"]) {
+    root.style.removeProperty("--codex-custom-message-accent-" + theme);
+    root.style.removeProperty("--codex-custom-message-ink-" + theme);
+  }
   root.removeAttribute("data-codex-surface-theme");
   root.removeAttribute("data-codex-user-skin-theme-state");
   root.removeAttribute("data-codex-user-skin");

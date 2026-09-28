@@ -910,9 +910,9 @@ const checks = {
     runningTitleAppearance.dotTransform === "none",
   completeStatusDotIsStatic: completeTitleAppearance.dotAnimationName === "none",
   modelDetected: Boolean(result.modelText && result.modelText !== "—"),
-  modelEffortCompact: String(result.modelText || "")
+  modelEffortCanonical: String(result.modelText || "")
     .split(/\s+\+\s+/)
-    .every((pair) => /\s(?:ULTRA|MAX|XH|H|M|L)$/.test(pair)),
+    .every((pair) => /\s(?:ULTRA|MAX|XH|H|MID|LOW)$/.test(pair)),
 };
 console.log(JSON.stringify({
   passed: Object.values(checks).every(Boolean),

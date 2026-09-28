@@ -64,7 +64,8 @@ const original = await evaluate(`(() => {
   const root = document.documentElement;
   return {
     className: root.className,
-    surface: root.getAttribute('data-codex-surface-layout') === 'surface',
+    nativeTheme: root.getAttribute("data-theme"),
+    surface: localStorage.getItem('codex.surface-layout.v2') === 'surface',
     indicator: root.getAttribute('data-codex-assistant-indicator') || 'rider',
     responseEnabled: root.getAttribute('data-codex-assistant-indicator-enabled') !== 'false',
     onlineEnabled: root.getAttribute('data-codex-online-core-enabled') !== 'false',
@@ -76,6 +77,7 @@ try {
   await evaluate(`(() => {
     const root = document.documentElement;
     const controller = globalThis.__codexSurfaceLayoutController;
+    root.setAttribute("data-theme", ${JSON.stringify(theme)});
     root.classList.remove('light', 'dark', 'electron-light', 'electron-dark');
     root.classList.add(${JSON.stringify(theme === "light" ? "electron-light" : "electron-dark")});
     if (${JSON.stringify(theme)} === 'dark') root.classList.add('dark');
@@ -125,6 +127,7 @@ try {
     }).length : 0;
     return {
       rootClass: root.className,
+      activeLayout: root.getAttribute("data-codex-surface-layout") || "official",
       viewport: { width: innerWidth, height: innerHeight, devicePixelRatio },
       indicator: root.getAttribute('data-codex-assistant-indicator'),
       state: root.getAttribute('data-codex-online-core-state'),
@@ -192,6 +195,8 @@ try {
   await evaluate(`(() => {
     const root = document.documentElement;
     const controller = globalThis.__codexSurfaceLayoutController;
+    if (${JSON.stringify(original.nativeTheme)} === null) root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", ${JSON.stringify(original.nativeTheme)});
     root.className = ${JSON.stringify(original.className)};
     controller?.setAssistantIndicator?.(${JSON.stringify(original.indicator)}, false);
     controller?.setAssistantIndicatorEnabled?.(${JSON.stringify(original.responseEnabled)}, false);

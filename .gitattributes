@@ -1,0 +1,2 @@
+# Preserve the exact bytes verified by theme.json and SHA256SUMS.txt.
+* -text
